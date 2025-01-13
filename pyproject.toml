@@ -1,7 +1,60 @@
 [project]
-name = "giraffe"
-version = "0.1.0"
+dependencies = [
+  "loguru>=0.7.3",
+  "mypy>=1.14.1",
+  "ruff>=0.9.1",
+]
 description = "Add your description here"
+name = "giraffe"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+version = "0.1.0"
+
+[tool.ruff]
+exclude = [
+  "docs/",
+  "examples/",
+]
+line-length = 150
+preview = true
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "F", # Pyflakes
+  "W6",
+  "E71",
+  "E72",
+  "E112", # no-indented-block
+  "E113", # unexpected-indentation
+  "E203", # whitespace-before-punctuation
+  "E272", # multiple-spaces-before-keyword
+  "E275", # missing-whitespace-after-keyword
+  "E303", # too-many-blank-lines
+  "E304", # blank-line-after-decorator
+  "E501", # line-too-long
+  "E702", # multiple-statements-on-one-line-semicolon
+  "E703", # useless-semicolon
+  "E731", # lambda-assignment
+  "W191", # tab-indentation
+  "W291", # trailing-whitespace
+  "W293", # blank-line-with-whitespace
+  "UP039", # unnecessary-class-parentheses
+  "C416", # unnecessary-comprehension
+  "RET506", # superfluous-else-raise
+  "RET507", # superfluous-else-continue
+  "A", # builtin shadowing rules
+  "SIM105", # suppressible-exception
+  "FURB110", # if-exp-instead-of-or-operator
+  "RUF018", # assignment-in-assert
+]
+
+[tool.mypy]
+check_untyped_defs = true
+explicit_package_bases = true
+files = "giraffe"
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
