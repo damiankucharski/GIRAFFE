@@ -36,7 +36,7 @@ class Node:
         self.children[ix] = replacement_node
 
         child.parent = None
-        replacement_node.parent = self 
+        replacement_node.parent = self
 
     def get_nodes(self):
         """
@@ -64,19 +64,20 @@ class Node:
         Returns:
         - Copy of the node
         """
-        raise NotImplementedError("Copy method not implemented")
+        return Node() 
 
     def copy_subtree(self):
         """
         Copy the subtree rooted at this node.
-
         Returns:
         - Copy of the subtree rooted at this node
         """
         self_copy = self.copy()
-        self_copy.children = [child.copy_subtree() for child in self.children]
-        for child in self_copy.children:
-            child.parent = self_copy
+        
+        for child in self.children:
+            child_copy = child.copy_subtree()
+            self_copy.add_child(child_copy)
+        
         return self_copy
 
     def calculate(self) -> TensorBackend:

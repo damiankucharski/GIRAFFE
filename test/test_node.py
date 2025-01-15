@@ -89,3 +89,28 @@ def test_replace_child_incorrect(example_tree):
 def test_get_nodes(example_tree):
     nodes = example_tree["A"].get_nodes()
     assert nodes == [example_tree["A"], example_tree["B"], example_tree["C"], example_tree["D"], example_tree["E"]]
+
+
+def test_copy(example_tree):
+    copy = example_tree["A"].copy()
+    assert copy.children == []
+    assert copy.parent is None
+
+
+def test_copy_subtree(example_tree):
+    copy = example_tree["A"].copy_subtree()
+    nodes = copy.get_nodes()
+
+    A, B, C, D, E = nodes
+
+    assert A.children == [B, C]
+    assert B.children == [D, E]
+    assert C.children == []
+    assert D.children == []
+    assert E.children == []
+
+    assert A.parent is None
+    assert B.parent is A
+    assert C.parent is A
+    assert D.parent is B
+    assert E.parent is B
