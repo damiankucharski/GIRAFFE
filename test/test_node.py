@@ -66,7 +66,7 @@ def test_replace_child_correct(example_tree):
 
     example_tree["A"].replace_child(example_tree["B"], replacement)
 
-    assert example_tree["A"].children == [example_tree["C"], replacement]
+    assert example_tree["A"].children == [replacement, example_tree["C"]]
     assert example_tree["B"].children == [example_tree["D"], example_tree["E"]]
     assert example_tree["C"].children == []
     assert example_tree["D"].children == []

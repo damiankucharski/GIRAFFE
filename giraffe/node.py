@@ -31,8 +31,12 @@ class Node:
     def replace_child(self, child, replacement_node):
         if replacement_node.parent is not None:
             raise ValueError("Replacement node already has a parent")
-        self.add_child(replacement_node)
-        self.remove_child(child)
+
+        ix = self.children.index(child)
+        self.children[ix] = replacement_node
+
+        child.parent = None
+        replacement_node.parent = self 
 
     def get_nodes(self):
         """
