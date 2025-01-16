@@ -1,5 +1,5 @@
 import pytest
-from giraffe.node import Node, ValueNode, OperatorNode, MeanNode, WeightedMeanNode
+from giraffe.node import Node, ValueNode, OperatorNode, MeanNode, WeightedMeanNode, MinNode, MaxNode
 import numpy as np
 from giraffe.backend.numpy_backend import NumpyBackend as B
 from unittest import mock
@@ -8,7 +8,7 @@ from typing import Union
 
 @pytest.fixture(autouse=True)
 def mock_random_uniform():
-    with mock.patch('numpy.random.uniform', return_value=0.3) as mocked_uniform:
+    with mock.patch("numpy.random.uniform", return_value=0.3) as mocked_uniform:
         yield mocked_uniform  # This allows the mock to be used in tests
 
 
@@ -132,10 +132,10 @@ def value_op_base_set():
         return np.array([[2, 2], [3, 3]])
 
     nset = {
-        "A": ValueNode(None, None, x(), 1),
-        "B": OperatorNode(None, None),
-        "C": ValueNode(None, None, x(), 2),
-        "D": ValueNode(None, None, x(), 3),
+        "A": ValueNode(None, x(), 1),
+        "B": OperatorNode(None),
+        "C": ValueNode(None, x(), 2),
+        "D": ValueNode(None, x(), 3),
     }
 
     return nset
@@ -167,10 +167,10 @@ def mean_tree_node_set():
     d = np.array([[4, 4], [5, 5]])
 
     nset = {
-        "A": ValueNode(None, None, a, 1),
-        "B": MeanNode(None, None),
-        "C": ValueNode(None, None, c, 2),
-        "D": ValueNode(None, None, d, 3),
+        "A": ValueNode(None, a, 1),
+        "B": MeanNode(None),
+        "C": ValueNode(None, c, 2),
+        "D": ValueNode(None, d, 3),
     }
 
     return nset
@@ -202,35 +202,99 @@ def test_mean(mean_tree):
     assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
 
 
-# @pytest.fixture
-# def weighted_mean_tree():
-#     a = np.array([[2, 2], [3, 3]])
-#     c = np.array([[3, 3], [4, 4]])
-#     d = np.array([[4, 4], [5, 5]])
+@pytest.fixture
+def weighted_mean_tree():
+    a = np.array([[2, 2], [3, 3]])
+    c = np.array([[3, 3], [4, 4]])
+    d = np.array([[4, 4], [5, 5]])
 
-#     nset = {
-#         "A": ValueNode(None, None, a, 1),
-#         "C": ValueNode(None, None, c, 2),
-#         "D": ValueNode(None, None, d, 3),
-#     }
+    nset = {
+        "A": ValueNode(None, a, 1),
+        "C": ValueNode(None, c, 2),
+        "D": ValueNode(None, d, 3),
+    }
 
-#     weights = [0.3, 0.2, 0.5]
+    weights = [0.3, 0.2, 0.5]
 
-#     nset["B"] = WeightedMeanNode(nset["A"], [nset["C"], nset["D"]], weights) # type: ignore
+    nset["B"] = WeightedMeanNode([nset["C"], nset["D"]], weights)  # type: ignore
+    nset["A"].add_child(nset["B"])
 
-#     return nset
+    return nset
 
 
-# def test_weighted_mean(weighted_mean_tree):
+def test_weighted_mean(weighted_mean_tree):
+    weighted_mean_tree["A"].calculate()
 
-#     weighted_mean_tree["A"].calculate()
+    evaluation_A = weighted_mean_tree["A"].evaluation
+    evaluation_C = weighted_mean_tree["C"].evaluation
+    evaluation_D = weighted_mean_tree["D"].evaluation
 
-#     evaluation_A = weighted_mean_tree["A"].evaluation
-#     evaluation_C = weighted_mean_tree["C"].evaluation
-#     evaluation_D = weighted_mean_tree["D"].evaluation
+    expected_weighted = np.array([[3.2, 3.2], [4.2, 4.2]])
 
-#     expected_weighted = np.array([[3.2, 3.2], [4.2, 4.2]])
+    assert np.array_equal(evaluation_A, expected_weighted)
+    assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
+    assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
 
-#     assert np.array_equal(evaluation_A, expected_weighted)
-#     assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
-#     assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
+
+@pytest.fixture
+def min_tree():
+    a = np.array([[2, 2], [3, 3]])
+    c = np.array([[3, 3], [4, 4]])
+    d = np.array([[4, 4], [5, 5]])
+
+    nset = {
+        "A": ValueNode(None, a, 1),
+        "C": ValueNode(None, c, 2),
+        "D": ValueNode(None, d, 3),
+    }
+
+    nset["B"] = MinNode([nset["C"], nset["D"]])  # type: ignore
+    nset["A"].add_child(nset["B"])
+
+    return nset
+
+
+def test_min_tree(min_tree):
+    min_tree["A"].calculate()
+
+    evaluation_A = min_tree["A"].evaluation
+    evaluation_C = min_tree["C"].evaluation
+    evaluation_D = min_tree["D"].evaluation
+
+    expected = np.array([[2.0, 2.0], [3.0, 3.0]])
+
+    assert np.array_equal(evaluation_A, expected)
+    assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
+    assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
+
+
+@pytest.fixture
+def max_tree():
+    a = np.array([[2, 2], [3, 3]])
+    c = np.array([[3, 3], [4, 4]])
+    d = np.array([[4, 4], [5, 5]])
+
+    nset = {
+        "A": ValueNode(None, a, 1),
+        "C": ValueNode(None, c, 2),
+        "D": ValueNode(None, d, 3),
+    }
+
+    nset["B"] = MaxNode([nset["C"], nset["D"]])  # type: ignore
+    nset["A"].add_child(nset["B"])
+
+    return nset
+
+
+def test_max_tree(max_tree):
+    max_tree["A"].calculate()
+
+    evaluation_A = max_tree["A"].evaluation
+    evaluation_C = max_tree["C"].evaluation
+    evaluation_D = max_tree["D"].evaluation
+
+    expected = np.array([[4.0, 4.0], [5.0, 5.0]])
+
+    assert np.array_equal(evaluation_A, expected)
+    assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
+    assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))

@@ -1,6 +1,7 @@
 from graphviz import Digraph
 
 from giraffe.node import ValueNode, Node
+
 # from giraffe.tree import Tree
 from giraffe.globals import BACKEND as B
 import giraffe
@@ -23,19 +24,13 @@ def draw_tree(to_draw: Union[Node], dot=None, add_val_eval=True):
 
     if isinstance(node, ValueNode):
         if node.value is not None:
-            value = (
-                B.to_numpy(node.value)
-                if (np.prod(node.value.shape) <= 9)
-                else f"Tensor with memory adress: {hex(id(node.value))}"
-            )
+            value = B.to_numpy(node.value) if (np.prod(node.value.shape) <= 9) else f"Tensor with memory adress: {hex(id(node.value))}"
         else:
             value = None
 
         if node.evaluation is not None:
             evaluation = (
-                B.to_numpy(node.evaluation)
-                if (np.prod(node.evaluation.shape) <= 9)
-                else f"Tensor with memory adress: {hex(id(node.evaluation))}"
+                B.to_numpy(node.evaluation) if (np.prod(node.evaluation.shape) <= 9) else f"Tensor with memory adress: {hex(id(node.evaluation))}"
             )
         else:
             evaluation = None

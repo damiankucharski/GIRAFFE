@@ -1,20 +1,25 @@
 from typing import List, Optional, Union, Callable, Sequence, cast
-from functools import partial
 from giraffe.globals import BACKEND as B
 import numpy as np
-from loguru import logger
 
 
 class Node:
     """
     Nodes act as the fundamental building blocks of a tree,
     capable of holding children and a reference to their parent node.
+
+    When created, parent reference cannot be specified. The reason for it is to create uniderectional
+    responsibility for link creation. A node should be responsible for creating and breakig links with its children,
+    by setting their parent links.
     """
 
-    def __init__(self, parent: Optional["Node"] = None, children: Optional[Sequence["Node"]] = None):
-        self.parent = parent
-        self.children: List[Node] = []
+    def __init__(self, children: Optional[Sequence["Node"]] = None):
+        self.parent: Union[Node, None] = None
+        self.children: List[Node] = list(children) if children is not None else []
         self.type = None
+
+        for child in self.children:
+            child.parent = self
 
     def add_child(self, child_node: "Node"):
         """
@@ -113,8 +118,8 @@ class ValueNode(Node):
     A Value Node holds a specific value or tensor.
     """
 
-    def __init__(self, parent: Optional["OperatorNode"], children: Optional[Sequence["OperatorNode"]], value, id: Union[int, str]):
-        super().__init__(parent, children)
+    def __init__(self, children: Optional[Sequence["OperatorNode"]], value, id: Union[int, str]):
+        super().__init__(children)
         self.value = value
         self.evaluation = None
         self.id = id
@@ -135,7 +140,7 @@ class ValueNode(Node):
         self.evaluation = None
 
     def copy(self):
-        return ValueNode(None, None, self.value, self.id)
+        return ValueNode(None, self.value, self.id)
 
     @property
     def code(self) -> str:
@@ -152,11 +157,10 @@ class OperatorNode(Node):
 
     def __init__(
         self,
-        parent: Optional[ValueNode],
         children: Optional[Sequence[ValueNode]],
         operator: Callable = lambda x: x,
     ):
-        super().__init__(parent, children)
+        super().__init__(children)
         self.operator = operator
 
     def calculate(self):
@@ -184,14 +188,14 @@ class MeanNode(OperatorNode):
     A Mean Node computes the mean along a specified axis of a tensor.
     """
 
-    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
-        super().__init__(parent, children, self.op)
+    def __init__(self, children: Optional[Sequence[ValueNode]]):
+        super().__init__(children, self.op)
 
     def __str__(self) -> str:
         return "MeanNode"
 
     def copy(self):
-        return MeanNode(None, None)
+        return MeanNode(None)
 
     @property
     def code(self) -> str:
@@ -201,8 +205,8 @@ class MeanNode(OperatorNode):
         return B.mean(x, axis=0)
 
     @staticmethod
-    def create_node(parent, children):  # TODO: it could be derived from simple vs parametrized OperatorNode
-        return MeanNode(parent, children)
+    def create_node(children):  # TODO: it could be derived from simple vs parametrized OperatorNode
+        return MeanNode(children)
 
 
 class WeightedMeanNode(OperatorNode):
@@ -215,29 +219,23 @@ class WeightedMeanNode(OperatorNode):
 
     def __init__(
         self,
-        parent: Optional[ValueNode],
         children: Optional[Sequence[ValueNode]],
         weights: List[float],
     ):
         self._weights = weights
-        logger.debug("Before super")
-        super().__init__(parent, children, self.op)
-        logger.debug("After super")
+        super().__init__(children, self.op)
 
         self._weight_sum_assertion()
-        self._weight_length_assertion()
 
     def op(self, x):
         weight_shape = (-1, *([1] * (len(x.shape) - 1)))
-        logger.debug(f'{weight_shape=}') 
         w = B.reshape(self.weights, weight_shape)
-        logger.debug(f'{w=}')
         x = x * w
         x = B.sum(x, axis=0)
         return x
 
     def copy(self):
-        return WeightedMeanNode(None, [], [x for x in self._weights])  # this needs to be rethought
+        return WeightedMeanNode([], [x for x in self._weights])  # this needs to be rethought
 
     def add_child(self, child_node: Node):
         assert isinstance(child_node, ValueNode)
@@ -271,6 +269,11 @@ class WeightedMeanNode(OperatorNode):
         super().replace_child(child, replacement_node)
         self._weight_length_assertion()
 
+    def calculate(self):
+        self._weight_length_assertion()
+        self._weight_sum_assertion()
+        return super().calculate()
+
     def __str__(self) -> str:
         return f"WeightedMeanNode with weights: {B.to_numpy(B.tensor(self._weights)).round(2)}"
 
@@ -284,15 +287,15 @@ class WeightedMeanNode(OperatorNode):
         return w
 
     @staticmethod
-    def create_node(parent, children):
-        weights = [np.random.uniform(0, 1)] # initial weight for parent
+    def create_node(children):
+        weights = [np.random.uniform(0, 1)]  # initial weight for parent
         weight_left = 1 - weights[0]
         for child in children[:-1]:
             weights.append(np.random.uniform(0, weight_left))
             weight_left -= weights[-1]
         weights.append(weight_left)
 
-        return WeightedMeanNode(parent, children, weights)
+        return WeightedMeanNode(children, weights)
 
     def _weight_sum_assertion(self):
         assert np.isclose(np.sum(self._weights), 1), "Weights do not sum to 1"
@@ -308,14 +311,14 @@ class MaxNode(OperatorNode):
     A Max Node computes the maximum value along a specified axis of a tensor.
     """
 
-    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
-        super().__init__(parent, children, self.op)
+    def __init__(self, children: Optional[Sequence[ValueNode]]):
+        super().__init__(children, self.op)
 
     def __str__(self) -> str:
         return "MaxNode"
 
     def copy(self):
-        return MaxNode(None, None)
+        return MaxNode(None)
 
     @property
     def code(self) -> str:
@@ -328,8 +331,8 @@ class MaxNode(OperatorNode):
         return
 
     @staticmethod
-    def create_node(parent, children):
-        return MaxNode(parent, children)
+    def create_node(children):
+        return MaxNode(children)
 
 
 class MinNode(OperatorNode):
@@ -339,14 +342,14 @@ class MinNode(OperatorNode):
     A Min Node computes the minimum value along a specified axis of a tensor.
     """
 
-    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
-        super().__init__(parent, children, self.op)
+    def __init__(self, children: Optional[Sequence[ValueNode]]):
+        super().__init__(children, self.op)
 
     def __str__(self) -> str:
         return "MinNode"
 
     def copy(self):
-        return MinNode(None, None)
+        return MinNode(None)
 
     @property
     def code(self) -> str:
@@ -359,5 +362,5 @@ class MinNode(OperatorNode):
         return
 
     @staticmethod
-    def create_node(parent, children):
-        return MinNode(parent, children)
+    def create_node(children):
+        return MinNode(children)
