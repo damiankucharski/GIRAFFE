@@ -1,13 +1,15 @@
 from giraffe.backend.numpy_backend import NumpyBackend
+from giraffe.backend.pytorch import PyTorchBackend
 import pytest
 import numpy as np
 
-BACKENDS = [NumpyBackend]
+BACKENDS = [NumpyBackend, PyTorchBackend]
+
 
 @pytest.mark.parametrize(
     "arrays, axis, expected_shape",
     [
-        ([[1, 2], [3, 4]], 0, (4,)),
+        ([[1, 2], [3, 4]], 0, (2, 2)),
         (
             [
                 [[1, 2], [3, 4]],
@@ -15,7 +17,7 @@ BACKENDS = [NumpyBackend]
             ],
             0,
             (4, 2),
-        )
+        ),
     ],
 )
 def test_concat(arrays, axis, expected_shape):

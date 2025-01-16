@@ -1,4 +1,9 @@
-from typing import List, Optional, Union, Callable, cast, Sequence
+from typing import List, Optional, Union, Callable, Sequence, cast
+from functools import partial
+from giraffe.globals import BACKEND as B
+import numpy as np
+from loguru import logger
+
 
 class Node:
     """
@@ -8,7 +13,7 @@ class Node:
 
     def __init__(self, parent: Optional["Node"] = None, children: Optional[Sequence["Node"]] = None):
         self.parent = parent
-        self.children: List[Node] = list(children) if children is not None else []
+        self.children: List[Node] = []
         self.type = None
 
     def add_child(self, child_node: "Node"):
@@ -62,7 +67,7 @@ class Node:
         Returns:
         - Copy of the node
         """
-        return Node() 
+        return Node()
 
     def copy_subtree(self):
         """
@@ -71,14 +76,14 @@ class Node:
         - Copy of the subtree rooted at this node
         """
         self_copy = self.copy()
-        
+
         for child in self.children:
             child_copy = child.copy_subtree()
             self_copy.add_child(child_copy)
-        
+
         return self_copy
 
-    def calculate(self) -> TensorBackend:
+    def calculate(self):
         """
         Abstract method for calculation logic.
 
@@ -108,10 +113,10 @@ class ValueNode(Node):
     A Value Node holds a specific value or tensor.
     """
 
-    def __init__(self, parent: Optional[Node], children: Optional[Sequence[Node]], value: TensorBackend, id: Union[int, str]):
+    def __init__(self, parent: Optional["OperatorNode"], children: Optional[Sequence["OperatorNode"]], value, id: Union[int, str]):
         super().__init__(parent, children)
         self.value = value
-        self.evaluation: Union[None, TensorBackend] = None
+        self.evaluation = None
         self.id = id
 
     def calculate(self):
@@ -135,7 +140,7 @@ class ValueNode(Node):
     @property
     def code(self) -> str:
         return f"VN[{self.id}]"
-    
+
 
 class OperatorNode(Node):
     """
@@ -149,9 +154,210 @@ class OperatorNode(Node):
         self,
         parent: Optional[ValueNode],
         children: Optional[Sequence[ValueNode]],
-        operator: Callable[[TensorBackend], TensorBackend] = lambda x: x,
+        operator: Callable = lambda x: x,
     ):
-        
         super().__init__(parent, children)
         self.operator = operator
 
+    def calculate(self):
+        concat = self._concat()
+        return self.operator(concat)
+
+    def _concat(self):
+        assert self.parent is not None, "OperatorNode must have a parent to be calculated"
+        parent: ValueNode = cast(ValueNode, self.parent)
+        parent_eval = parent.evaluation if parent.evaluation is not None else parent.value
+        return B.concat(
+            [B.unsqueeze(parent_eval, axis=0)] + [B.unsqueeze(child.calculate(), axis=0) for child in self.children],
+            axis=0,
+        )
+
+    @staticmethod
+    def create_node(parent, children):
+        raise NotImplementedError()
+
+
+class MeanNode(OperatorNode):
+    """
+    Represents a Mean Node in a computational tree.
+
+    A Mean Node computes the mean along a specified axis of a tensor.
+    """
+
+    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
+        super().__init__(parent, children, self.op)
+
+    def __str__(self) -> str:
+        return "MeanNode"
+
+    def copy(self):
+        return MeanNode(None, None)
+
+    @property
+    def code(self) -> str:
+        return "MN"
+
+    def op(self, x):
+        return B.mean(x, axis=0)
+
+    @staticmethod
+    def create_node(parent, children):  # TODO: it could be derived from simple vs parametrized OperatorNode
+        return MeanNode(parent, children)
+
+
+class WeightedMeanNode(OperatorNode):
+    """
+    Represents a Weighted Mean Node in a computational tree.
+
+    A Weighted Mean Node computes the mean of a tensor,
+    but with different weights applied to each element.
+    """
+
+    def __init__(
+        self,
+        parent: Optional[ValueNode],
+        children: Optional[Sequence[ValueNode]],
+        weights: List[float],
+    ):
+        self._weights = weights
+        logger.debug("Before super")
+        super().__init__(parent, children, self.op)
+        logger.debug("After super")
+
+        self._weight_sum_assertion()
+        self._weight_length_assertion()
+
+    def op(self, x):
+        weight_shape = (-1, *([1] * (len(x.shape) - 1)))
+        logger.debug(f'{weight_shape=}') 
+        w = B.reshape(self.weights, weight_shape)
+        logger.debug(f'{w=}')
+        x = x * w
+        x = B.sum(x, axis=0)
+        return x
+
+    def copy(self):
+        return WeightedMeanNode(None, [], [x for x in self._weights])  # this needs to be rethought
+
+    def add_child(self, child_node: Node):
+        assert isinstance(child_node, ValueNode)
+        child_weight = np.random.uniform(0, 1)
+        adj = 1.0 - child_weight
+
+        for i, val in enumerate(self._weights):
+            self._weights[i] = val * adj
+        self._weights.append(child_weight)
+        self._weight_sum_assertion()
+
+        super().add_child(child_node)
+        self._weight_length_assertion()
+
+    def remove_child(self, child_node: Node):
+        assert isinstance(child_node, ValueNode), "Child node of WMN must be a ValueNode"
+
+        child_ix = self.children.index(child_node)
+        adj = 1.0 - self._weights[child_ix]
+        self._weights.pop(child_ix)
+
+        super().remove_child(child_node)
+
+        for i, val in enumerate(self._weights):
+            self._weights[i] = val / adj
+
+        self._weight_sum_assertion()
+        self._weight_length_assertion()
+
+    def replace_child(self, child, replacement_node):
+        super().replace_child(child, replacement_node)
+        self._weight_length_assertion()
+
+    def __str__(self) -> str:
+        return f"WeightedMeanNode with weights: {B.to_numpy(B.tensor(self._weights)).round(2)}"
+
+    @property
+    def code(self) -> str:
+        return "WMN"
+
+    @property
+    def weights(self):
+        w = B.tensor(self._weights)
+        return w
+
+    @staticmethod
+    def create_node(parent, children):
+        weights = [np.random.uniform(0, 1)] # initial weight for parent
+        weight_left = 1 - weights[0]
+        for child in children[:-1]:
+            weights.append(np.random.uniform(0, weight_left))
+            weight_left -= weights[-1]
+        weights.append(weight_left)
+
+        return WeightedMeanNode(parent, children, weights)
+
+    def _weight_sum_assertion(self):
+        assert np.isclose(np.sum(self._weights), 1), "Weights do not sum to 1"
+
+    def _weight_length_assertion(self):
+        assert len(self._weights) == (len(self.children) + 1), "Length of weight array is different than number of adjacent nodes"
+
+
+class MaxNode(OperatorNode):
+    """
+    Represents a Max Node in a computational tree.
+
+    A Max Node computes the maximum value along a specified axis of a tensor.
+    """
+
+    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
+        super().__init__(parent, children, self.op)
+
+    def __str__(self) -> str:
+        return "MaxNode"
+
+    def copy(self):
+        return MaxNode(None, None)
+
+    @property
+    def code(self) -> str:
+        return "MAX"
+
+    def op(self, x):
+        return B.max(x, axis=0)
+
+    def adjust_params(self):
+        return
+
+    @staticmethod
+    def create_node(parent, children):
+        return MaxNode(parent, children)
+
+
+class MinNode(OperatorNode):
+    """
+    Represents a Min Node in a computational tree.
+
+    A Min Node computes the minimum value along a specified axis of a tensor.
+    """
+
+    def __init__(self, parent: Optional[ValueNode], children: Optional[Sequence[ValueNode]]):
+        super().__init__(parent, children, self.op)
+
+    def __str__(self) -> str:
+        return "MinNode"
+
+    def copy(self):
+        return MinNode(None, None)
+
+    @property
+    def code(self) -> str:
+        return "MIN"
+
+    def op(self, x):
+        return B.min(x, axis=0)
+
+    def adjust_params(self):
+        return
+
+    @staticmethod
+    def create_node(parent, children):
+        return MinNode(parent, children)
