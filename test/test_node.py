@@ -1,5 +1,6 @@
 import pytest
-from giraffe.node import Node
+from giraffe.node import Node, ValueNode, OperatorNode
+import numpy as np
 
 
 @pytest.fixture
@@ -114,3 +115,35 @@ def test_copy_subtree(example_tree):
     assert C.parent is A
     assert D.parent is B
     assert E.parent is B
+
+
+@pytest.fixture
+def value_op_base_set():
+
+    def x(): return np.array([[2,2],[3,3]])
+
+    nset = {
+        "A": ValueNode(None, None, x(), 1),
+        "B": OperatorNode(None, None),
+        "C": ValueNode(None, None, x(), 2),
+        "D": ValueNode(None, None, x(), 3),
+    }
+
+    return nset
+
+@pytest.fixture
+def value_op_base_tree(value_op_base_set):
+    """Create a tree with the following structure:
+    A
+    ├── B
+    │   ├── D
+    │   └── C
+    """
+    value_op_base_set["B"].add_child(value_op_base_set["D"])
+    value_op_base_set["B"].add_child(value_op_base_set["C"])
+    value_op_base_set["A"].add_child(value_op_base_set["B"])
+    return value_op_base_set
+
+def test_concat(value_op_base_tree):
+    concat = value_op_base_tree["B"]._concat()
+    assert np.array_equal(concat.shape(), (3,2,2))

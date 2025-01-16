@@ -1,9 +1,28 @@
-from giraffe.backend.type import TensorBackend
 from giraffe.backend.numpy_backend import NumpyBackend
 import pytest
 import numpy as np
 
 BACKENDS = [NumpyBackend]
+
+@pytest.mark.parametrize(
+    "arrays, axis, expected_shape",
+    [
+        ([[1, 2], [3, 4]], 0, (4,)),
+        (
+            [
+                [[1, 2], [3, 4]],
+                [[5, 6], [7, 8]],
+            ],
+            0,
+            (4, 2),
+        )
+    ],
+)
+def test_concat(arrays, axis, expected_shape):
+    for B in BACKENDS:
+        tensors = [B.tensor(array) for array in arrays]
+        result = B.to_numpy(B.concat(tensors, axis))
+        np.testing.assert_array_equal(result.shape, expected_shape)
 
 
 @pytest.mark.parametrize(
@@ -15,9 +34,9 @@ BACKENDS = [NumpyBackend]
     ],
 )
 def test_mean(array, expected_mean, axis, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.mean(axis=axis).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.mean(tensor, axis=axis))
         np.testing.assert_array_equal(result, expected_mean)
         np.testing.assert_array_equal(result.shape, expected_shape)
 
@@ -31,9 +50,9 @@ def test_mean(array, expected_mean, axis, expected_shape):
     ],
 )
 def test_sum(array, expected_sum, axis, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.sum(axis=axis).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.sum(tensor, axis=axis))
         np.testing.assert_array_equal(result, expected_sum)
         np.testing.assert_array_equal(result.shape, expected_shape)
 
@@ -47,9 +66,9 @@ def test_sum(array, expected_sum, axis, expected_shape):
     ],
 )
 def test_max(array, expected_max, axis, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.max(axis=axis).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.max(tensor, axis=axis))
         np.testing.assert_array_equal(result, expected_max)
         np.testing.assert_array_equal(result.shape, expected_shape)
 
@@ -63,9 +82,9 @@ def test_max(array, expected_max, axis, expected_shape):
     ],
 )
 def test_min(array, expected_min, axis, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.min(axis=axis).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.min(tensor, axis=axis))
         np.testing.assert_array_equal(result, expected_min)
         np.testing.assert_array_equal(result.shape, expected_shape)
 
@@ -78,9 +97,9 @@ def test_min(array, expected_min, axis, expected_shape):
     ],
 )
 def test_clip(array, min_val, max_val, expected_result):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.clip(min_val, max_val).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.clip(tensor, min_val, max_val))
         np.testing.assert_array_equal(result, expected_result)
 
 
@@ -92,9 +111,9 @@ def test_clip(array, min_val, max_val, expected_result):
     ],
 )
 def test_reshape(array, new_shape, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.reshape(new_shape).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.reshape(tensor, new_shape))
         np.testing.assert_array_equal(result.shape, expected_shape)
 
 
@@ -106,9 +125,9 @@ def test_reshape(array, new_shape, expected_shape):
     ],
 )
 def test_squeeze(array, expected_result):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.squeeze().numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.squeeze(tensor))
         np.testing.assert_array_equal(result, expected_result)
 
 
@@ -120,7 +139,7 @@ def test_squeeze(array, expected_result):
     ],
 )
 def test_unsqueeze(array, axis, expected_shape):
-    for backend in BACKENDS:
-        tensor = backend(array)
-        result = tensor.unsqueeze(axis).numpy()
+    for B in BACKENDS:
+        tensor = B.tensor(array)
+        result = B.to_numpy(B.unsqueeze(tensor, axis))
         np.testing.assert_array_equal(result.shape, expected_shape)

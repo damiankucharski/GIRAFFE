@@ -1,62 +1,58 @@
-from giraffe.backend.backend_interface import BackendInterface
-import numpy as np
-from typing import Union, override
+from abc import ABC
 
-
-class NumpyBackend(BackendInterface):
-    
+class BackendInterface(ABC):
     @staticmethod
     def tensor(x):
-        return np.asarray(x)
+        raise NotImplementedError()
 
     @staticmethod
     def concat(tensors, axis=0):
-        return np.concatenate(tensors, axis)
+        raise NotImplementedError()
 
     @staticmethod
     def mean(x, axis=None):
-        return np.mean(x, axis)
+        raise NotImplementedError()
 
     @staticmethod
     def max(x, axis=None):
-        return np.max(x, axis)
+        raise NotImplementedError()
 
     @staticmethod
     def min(x, axis=None):
-        return np.min(x, axis)
+        raise NotImplementedError()
 
     @staticmethod
     def sum(x, axis=None):
-        return np.sum(x, axis)
+        raise NotImplementedError()
 
     @staticmethod
     def to_numpy(x):
-        return x
+        raise NotImplementedError()
 
     @staticmethod
     def clip(x, min, max):
-        return np.clip(x, min, max)
+        raise NotImplementedError()
 
     @staticmethod
     def log(x):
-        return np.log(x)
+        raise NotImplementedError()
 
     @staticmethod
     def to_float(x):
-        return x.astype(float)
+        raise NotImplementedError()
 
     @staticmethod
     def shape(x):
-        return x.shape
+        raise NotImplementedError()
 
     @staticmethod
     def reshape(x, *args, **kwargs):
-        return np.reshape(x, *args, **kwargs)
+        raise NotImplementedError()
 
     @staticmethod
     def squeeze(x):
-        return np.squeeze(x)
+        raise NotImplementedError()
 
     @staticmethod
     def unsqueeze(x, axis):
-        return np.expand_dims(x, axis)
+        raise NotImplementedError()
