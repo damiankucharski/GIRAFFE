@@ -1,3 +1,4 @@
+from loguru import logger
 from typing import List, Optional, Union, Callable, Sequence, cast
 from giraffe.globals import BACKEND as B
 import numpy as np
@@ -37,6 +38,9 @@ class Node:
         return child_node
 
     def replace_child(self, child, replacement_node):
+        """
+        Replaces child in place. No add child or remove child is called, so no add/remove adjustments are made.
+        """
         if replacement_node.parent is not None:
             raise ValueError("Replacement node already has a parent")
 
@@ -254,13 +258,14 @@ class WeightedMeanNode(OperatorNode):
         assert isinstance(child_node, ValueNode), "Child node of WMN must be a ValueNode"
 
         child_ix = self.children.index(child_node)
-        adj = 1.0 - self._weights[child_ix]
-        self._weights.pop(child_ix)
+        adj = 1.0 - self._weights[child_ix + 1] # adjust for parent weight being first
+        self._weights.pop(child_ix + 1) 
 
         super().remove_child(child_node)
 
         for i, val in enumerate(self._weights):
             self._weights[i] = val / adj
+
 
         self._weight_sum_assertion()
         self._weight_length_assertion()

@@ -235,6 +235,49 @@ def test_weighted_mean(weighted_mean_tree):
     assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
     assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
 
+def test_weighted_mean_child_remove(weighted_mean_tree):
+    weighted_mean_tree["B"].remove_child(weighted_mean_tree["C"])
+
+    expected_weights = np.array([0.375, 0.625])
+    
+    np.testing.assert_array_almost_equal(weighted_mean_tree["B"].weights, expected_weights)
+
+    weighted_mean_tree["A"].calculate()
+
+    evaluation_A = weighted_mean_tree["A"].evaluation
+    evaluation_C = weighted_mean_tree["C"].evaluation
+    evaluation_D = weighted_mean_tree["D"].evaluation
+
+    expected_weighted = np.array([[3.25, 3.25], [4.25, 4.25]])
+
+    np.testing.assert_array_almost_equal(evaluation_A, expected_weighted)
+    assert evaluation_C is None
+    np.testing.assert_array_almost_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
+
+
+def test_weighted_mean_child_add(weighted_mean_tree):
+    e = np.array([[5, 5], [6, 6]])
+
+    weighted_mean_tree["E"] = ValueNode(None, e, 4)
+    weighted_mean_tree["B"].add_child(weighted_mean_tree["E"])
+
+    expected_weights = np.array([0.3 * 0.7, 0.2 * 0.7, 0.5 * 0.7, 0.3])
+
+    np.testing.assert_array_almost_equal(weighted_mean_tree["B"].weights, expected_weights)
+
+    weighted_mean_tree["A"].calculate()
+
+    evaluation_A = weighted_mean_tree["A"].evaluation
+    evaluation_C = weighted_mean_tree["C"].evaluation
+    evaluation_D = weighted_mean_tree["D"].evaluation
+    evaluation_E = weighted_mean_tree["E"].evaluation
+
+    expected_weighted = np.array([[3.74, 3.74], [4.74, 4.74]])
+
+    np.testing.assert_array_almost_equal(evaluation_A, expected_weighted)
+    np.testing.assert_array_almost_equal(evaluation_C, np.array([[3, 3], [4, 4]])) 
+    np.testing.assert_array_almost_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
+    np.testing.assert_array_almost_equal(evaluation_E, np.array([[5, 5], [6, 6]]))
 
 @pytest.fixture
 def min_tree():

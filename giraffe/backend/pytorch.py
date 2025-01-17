@@ -52,19 +52,19 @@ class PyTorchBackend(BackendInterface):
     def to_float(x):
         return x.float()
 
-    @staticmethod
-    def load_torch(path, device="cpu"):
-        tensor = torch.load(path, map_location=device)
-        if len(tensor.shape) == 1:
-            tensor = tensor.unsqueeze(0)
+    # @staticmethod
+    # def load_torch(path, device="cpu"):
+    #     tensor = torch.load(path, map_location=device)
+    #     if len(tensor.shape) == 1:
+    #         tensor = tensor.unsqueeze(0)
 
-        return tensor
+    #     return tensor
 
-    @staticmethod
-    def load_numpy(path, device="cpu"):
-        import numpy as np
+    # @staticmethod
+    # def load_numpy(path, device="cpu"):
+    #     import numpy as np
 
-        return torch.from_numpy(np.load(path), device=device)
+    #     return torch.from_numpy(np.load(path), device=device)
 
     @staticmethod
     def shape(x):

@@ -1,8 +1,9 @@
 from giraffe.backend.backend_interface import BackendInterface
+from typing import Type
 
 
 class Backend:
-    _current_backend: BackendInterface = None
+    _current_backend: Type[BackendInterface] | None = None
 
     @classmethod
     def set_backend(cls, backend_name):  # TODO: Add option to set backend by providing class instead
