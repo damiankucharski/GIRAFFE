@@ -1,5 +1,16 @@
 import pytest
-from giraffe.node import Node, ValueNode, OperatorNode, MeanNode, WeightedMeanNode, MinNode, MaxNode
+from giraffe.node import (
+    Node,
+    ValueNode,
+    OperatorNode,
+    MeanNode,
+    WeightedMeanNode,
+    MinNode,
+    MaxNode,
+    check_if_both_types_same_node_variant,
+    check_if_both_types_operators,
+    check_if_both_types_values,
+)
 import numpy as np
 from giraffe.backend.numpy_backend import NumpyBackend as B
 from unittest import mock
@@ -235,11 +246,12 @@ def test_weighted_mean(weighted_mean_tree):
     assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
     assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
 
+
 def test_weighted_mean_child_remove(weighted_mean_tree):
     weighted_mean_tree["B"].remove_child(weighted_mean_tree["C"])
 
     expected_weights = np.array([0.375, 0.625])
-    
+
     np.testing.assert_array_almost_equal(weighted_mean_tree["B"].weights, expected_weights)
 
     weighted_mean_tree["A"].calculate()
@@ -275,9 +287,10 @@ def test_weighted_mean_child_add(weighted_mean_tree):
     expected_weighted = np.array([[3.74, 3.74], [4.74, 4.74]])
 
     np.testing.assert_array_almost_equal(evaluation_A, expected_weighted)
-    np.testing.assert_array_almost_equal(evaluation_C, np.array([[3, 3], [4, 4]])) 
+    np.testing.assert_array_almost_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
     np.testing.assert_array_almost_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
     np.testing.assert_array_almost_equal(evaluation_E, np.array([[5, 5], [6, 6]]))
+
 
 @pytest.fixture
 def min_tree():
@@ -341,3 +354,41 @@ def test_max_tree(max_tree):
     assert np.array_equal(evaluation_A, expected)
     assert np.array_equal(evaluation_C, np.array([[3, 3], [4, 4]]))
     assert np.array_equal(evaluation_D, np.array([[4, 4], [5, 5]]))
+
+
+@pytest.mark.parametrize(
+    "type_1, type_2, expected",
+    [
+        (ValueNode, ValueNode, True),
+        (OperatorNode, OperatorNode, False),
+        (ValueNode, OperatorNode, False),
+        (OperatorNode, ValueNode, False),
+    ],
+)
+def test_check_both_value(type_1, type_2, expected):
+    assert check_if_both_types_values(type_1, type_2) == expected
+
+
+@pytest.mark.parametrize(
+    "type_1, type_2, expected",
+    [
+        (ValueNode, ValueNode, False),
+        (OperatorNode, OperatorNode, True),
+        (ValueNode, OperatorNode, False),
+        (OperatorNode, ValueNode, False),
+        (MeanNode, WeightedMeanNode, True),
+        (WeightedMeanNode, MeanNode, True),
+        (MinNode, MaxNode, True),
+        (MaxNode, MinNode, True),
+        (ValueNode, MinNode, False),
+        (MinNode, ValueNode, False),
+        (ValueNode, MaxNode, False),
+        (MaxNode, ValueNode, False),
+        (MeanNode, MaxNode, True),
+        (MaxNode, MeanNode, True),
+        (MeanNode, MinNode, True),
+        (MinNode, MeanNode, True),
+    ],
+)
+def test_check_both_operators(type_1, type_2, expected):
+    assert check_if_both_types_operators(type_1, type_2) == expected

@@ -1,8 +1,7 @@
-from giraffe.globals import BACKEND as B
-import numpy as np
-from giraffe.node import OperatorNode, ValueNode, Node
-from typing import Union
 from loguru import logger
+
+from giraffe.globals import BACKEND as B
+from giraffe.node import Node, OperatorNode, ValueNode, check_if_both_types_same_node_variant
 
 
 class Tree:
@@ -14,10 +13,6 @@ class Tree:
 
         self.nodes: dict[str, list] = {"value_nodes": [], "op_nodes": []}
         self.mutation_chance = mutation_chance
-        logger.debug("Updating nodes lists")
-        logger.debug(f"Lists before update: {self.nodes=}")
-        out = self.update_nodes()
-        logger.debug(f"Lists after update: {self.nodes=}")
 
     def update_nodes(self):
         self.nodes = {"value_nodes": [], "op_nodes": []}
@@ -27,8 +22,6 @@ class Tree:
                 self.nodes["value_nodes"].append(node)
             else:
                 self.nodes["op_nodes"].append(node)
-
-        return 123
 
     @staticmethod
     def create_tree_from_root(root: ValueNode, mutation_chance=0.1):
@@ -55,11 +48,14 @@ class Tree:
         return Tree.create_tree_from_root(self.root.copy_subtree())
 
     def prune_at(self, node: Node):  # remove node from the tree along with its children
+        if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
+            raise ValueError("Node not found in tree")
+
         if node.parent is None:
-            raise Exception("Cannot prune root node")
-        if isinstance(
-            node.parent, OperatorNode
-        ):  # and (len(node.parent.children) < 2): # I don't remember why one child only was allowed, commenting it out now.
+            raise ValueError("Cannot prune root node")
+        if isinstance(node.parent, OperatorNode) and (
+            len(node.parent.children) < 2
+        ):  # if only child of op node is to be pruned, remove the parent too
             return self.prune_at(node.parent)
 
         subtree_nodes = node.get_nodes()
@@ -73,8 +69,15 @@ class Tree:
         node.parent.remove_child(node)
 
         self._clean_evals()
+        return node
 
     def append_after(self, node: Node, new_node: Node):
+        if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
+            raise ValueError("Node not found in tree")
+
+        if check_if_both_types_same_node_variant(type(node), type(new_node)):
+            raise ValueError("Cannot append node of the same type")
+
         subtree_nodes = new_node.get_nodes()
 
         for subtree_node in subtree_nodes:

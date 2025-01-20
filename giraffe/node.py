@@ -1,7 +1,9 @@
-from loguru import logger
-from typing import List, Optional, Union, Callable, Sequence, cast
-from giraffe.globals import BACKEND as B
+from typing import Callable, List, Optional, Sequence, Union, cast
+
 import numpy as np
+
+from giraffe.globals import BACKEND as B
+from giraffe.type import Tensor
 
 
 class Node:
@@ -125,7 +127,7 @@ class ValueNode(Node):
     def __init__(self, children: Optional[Sequence["OperatorNode"]], value, id: Union[int, str]):
         super().__init__(children)
         self.value = value
-        self.evaluation = None
+        self.evaluation: None|Tensor = None
         self.id = id
 
     def calculate(self):
@@ -258,14 +260,13 @@ class WeightedMeanNode(OperatorNode):
         assert isinstance(child_node, ValueNode), "Child node of WMN must be a ValueNode"
 
         child_ix = self.children.index(child_node)
-        adj = 1.0 - self._weights[child_ix + 1] # adjust for parent weight being first
-        self._weights.pop(child_ix + 1) 
+        adj = 1.0 - self._weights[child_ix + 1]  # adjust for parent weight being first
+        self._weights.pop(child_ix + 1)
 
         super().remove_child(child_node)
 
         for i, val in enumerate(self._weights):
             self._weights[i] = val / adj
-
 
         self._weight_sum_assertion()
         self._weight_length_assertion()
@@ -295,7 +296,7 @@ class WeightedMeanNode(OperatorNode):
     def create_node(children):
         weights = [np.random.uniform(0, 1)]  # initial weight for parent
         weight_left = 1 - weights[0]
-        for child in children[:-1]:
+        for _ in children[:-1]:
             weights.append(np.random.uniform(0, weight_left))
             weight_left -= weights[-1]
         weights.append(weight_left)
@@ -369,3 +370,28 @@ class MinNode(OperatorNode):
     @staticmethod
     def create_node(children):
         return MinNode(children)
+
+
+def check_if_both_types_values(node1, node2):
+    if not isinstance(node1, type):
+        node1 = type(node1)
+    if not isinstance(node2, type):
+        node2 = type(node2)
+
+    return issubclass(node1, ValueNode) and issubclass(node2, ValueNode)
+
+
+def check_if_both_types_operators(node1, node2):
+    if not isinstance(node1, type):
+        node1 = type(node1)
+    if not isinstance(node2, type):
+        node2 = type(node2)
+    return issubclass(node1, OperatorNode) and issubclass(node2, OperatorNode)
+
+
+def check_if_both_types_same_node_variant(node1, node2):
+    if not isinstance(node1, type):
+        node1 = type(node1)
+    if not isinstance(node2, type):
+        node2 = type(node2)
+    return check_if_both_types_operators(node1, node2) or check_if_both_types_values(node1, node2)
