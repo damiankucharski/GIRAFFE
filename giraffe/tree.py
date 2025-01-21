@@ -13,6 +13,7 @@ class Tree:
 
         self.nodes: dict[str, list] = {"value_nodes": [], "op_nodes": []}
         self.mutation_chance = mutation_chance
+        self.update_nodes()
 
     def update_nodes(self):
         self.nodes = {"value_nodes": [], "op_nodes": []}
