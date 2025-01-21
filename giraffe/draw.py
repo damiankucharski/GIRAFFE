@@ -1,17 +1,13 @@
+import numpy as np
 from graphviz import Digraph
 
-from giraffe.node import ValueNode, Node
-
-from giraffe.tree import Tree
 from giraffe.globals import BACKEND as B
-import giraffe
-
-import numpy as np
-
-from typing import Union
+from giraffe.node import Node, OperatorNode, ValueNode
+from giraffe.tree import Tree
 
 
-def draw_tree(to_draw: Node | Tree, dot=None, add_val_eval=True):
+def draw_tree(to_draw: Node | OperatorNode | Tree | ValueNode, dot=None, add_val_eval=True):
+    node: None | Node | OperatorNode | ValueNode
     if isinstance(to_draw, Tree):
         node = to_draw.root
     else:
