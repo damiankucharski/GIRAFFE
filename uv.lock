@@ -156,13 +156,13 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "graphviz" },
+    { name = "loguru" },
     { name = "numpy" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "ipykernel" },
-    { name = "loguru" },
     { name = "mkdocs" },
     { name = "mypy" },
     { name = "pytest" },
@@ -175,13 +175,13 @@ torch = [
 [package.metadata]
 requires-dist = [
     { name = "graphviz", specifier = ">=0.20.3" },
+    { name = "loguru", specifier = ">=0.7.3" },
     { name = "numpy", specifier = ">=2.2.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "loguru", specifier = ">=0.7.3" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mypy", specifier = ">=1.14.1" },
     { name = "pytest", specifier = ">=8.3.4" },
