@@ -127,7 +127,7 @@ class ValueNode(Node):
     def __init__(self, children: Optional[Sequence["OperatorNode"]], value, id: Union[int, str]):
         super().__init__(children)
         self.value = value
-        self.evaluation: None|Tensor = None
+        self.evaluation: None | Tensor = None
         self.id = id
 
     def calculate(self):

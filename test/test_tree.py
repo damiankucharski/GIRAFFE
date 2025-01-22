@@ -103,7 +103,7 @@ def test_append_after(two_base_trees):
     assert len(tree2.nodes["op_nodes"]) == 2
 
     assert tree2.root == value_op_base_set["F"]
-    assert value_op_base_set["F"].children == [value_op_base_set['C'], value_op_base_set["B"]]
+    assert value_op_base_set["F"].children == [value_op_base_set["C"], value_op_base_set["B"]]
 
     assert value_op_base_set["B"].parent == value_op_base_set["F"]
     assert value_op_base_set["C"].parent == value_op_base_set["F"]
@@ -111,15 +111,13 @@ def test_append_after(two_base_trees):
     assert value_op_base_set["D"].parent == value_op_base_set["B"]
     assert value_op_base_set["E"].parent == value_op_base_set["B"]
     assert value_op_base_set["G"].parent == value_op_base_set["B"]
-    assert value_op_base_set['B'].children == [value_op_base_set["D"], value_op_base_set["E"], value_op_base_set["G"]]
+    assert value_op_base_set["B"].children == [value_op_base_set["D"], value_op_base_set["E"], value_op_base_set["G"]]
 
     assert value_op_base_set["H"].parent == value_op_base_set["C"]
     assert value_op_base_set["C"].children == [value_op_base_set["H"]]
 
 
-
-
-@pytest.mark.parametrize("node_should_fail", ['A', 'B', 'D', 'E', 'G', 'C'])
+@pytest.mark.parametrize("node_should_fail", ["A", "B", "D", "E", "G", "C"])
 def test_append_after_fails(two_base_trees, node_should_fail):
     tree1, tree2, value_op_base_set = two_base_trees
 

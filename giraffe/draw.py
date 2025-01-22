@@ -13,7 +13,6 @@ def draw_tree(to_draw: Node | OperatorNode | Tree | ValueNode, dot=None, add_val
     else:
         node = to_draw
 
-
     if dot is None:
         dot = Digraph(comment="Tree")
 
