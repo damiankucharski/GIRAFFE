@@ -127,3 +127,18 @@ def test_append_after_fails(two_base_trees, node_should_fail):
 
     with pytest.raises(ValueError):
         tree2.append_after(value_op_base_set[node_should_fail], branch)
+
+
+def test_replace_at(two_base_trees):
+    tree1, tree2, value_op_base_set = two_base_trees
+
+    branch = tree2.prune_at(value_op_base_set["C"])
+
+    tree1.replace_at(value_op_base_set["B"], branch)
+
+    assert len(tree1.nodes["value_nodes"]) == 4
+    assert len(tree1.nodes["op_nodes"]) == 1
+
+    assert tree1.root == value_op_base_set["A"]
+    assert value_op_base_set["A"].children == [value_op_base_set["C"]]
+    assert value_op_base_set["C"].parent == value_op_base_set["A"]
