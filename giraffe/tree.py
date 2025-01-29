@@ -136,7 +136,7 @@ class Tree:
 
 
     def get_unique_value_node_ids(self):
-        pass
+        return list(set([node.id for node in self.nodes["value_nodes"]]))
 
     def save_tree_architecture(self, output_path):  # TODO: needs adjustment for weighted node
         pass
