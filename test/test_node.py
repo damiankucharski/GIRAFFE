@@ -292,6 +292,25 @@ def test_weighted_mean_child_add(weighted_mean_tree):
     np.testing.assert_array_almost_equal(evaluation_E, np.array([[5, 5], [6, 6]]))
 
 
+def test_weighted_mean_copy_subtree(weighted_mean_tree):
+    copy = weighted_mean_tree["A"].copy_subtree()
+    nodes = copy.get_nodes()
+
+    A, B, C, D = nodes
+
+    assert A.children == [B]
+    assert B.children == [C, D]
+    assert C.children == []
+    assert D.children == []
+
+    assert A.parent is None
+    assert B.parent is A
+    assert C.parent is B
+    assert D.parent is B
+
+    np.testing.assert_equal(B.weights, weighted_mean_tree["B"].weights)
+
+
 @pytest.fixture
 def min_tree():
     a = np.array([[2, 2], [3, 3]])
