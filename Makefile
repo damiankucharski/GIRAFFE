@@ -4,6 +4,7 @@
 .PHONY: build_docs
 .PHONY: serve_docs
 .PHONY: deploy_docs
+.PHONY: ruff
 
 test:
 	@echo "Running tests..."
@@ -24,6 +25,10 @@ serve_docs:
 deploy_docs:
 	@echo "Deploying docs..."
 	uv run mkdocs gh-deploy
+
+ruff:
+	@echo "Running ruff..."
+	uv run ruff check giraffe
 
 
 all_test: test mypy
