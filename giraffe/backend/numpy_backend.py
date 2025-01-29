@@ -1,6 +1,6 @@
-from giraffe.backend.backend_interface import BackendInterface
 import numpy as np
-from typing import Union, override
+
+from giraffe.backend.backend_interface import BackendInterface
 
 
 class NumpyBackend(BackendInterface):

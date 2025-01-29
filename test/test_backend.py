@@ -1,7 +1,8 @@
+import numpy as np
+import pytest
+
 from giraffe.backend.numpy_backend import NumpyBackend
 from giraffe.backend.pytorch import PyTorchBackend
-import pytest
-import numpy as np
 
 BACKENDS = [NumpyBackend, PyTorchBackend]
 

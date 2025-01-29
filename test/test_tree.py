@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from giraffe.node import OperatorNode, ValueNode
+from giraffe.node import OperatorNode, ValueNode, WeightedMeanNode
 from giraffe.tree import Tree
 
 
@@ -142,7 +142,6 @@ def test_replace_at(two_base_trees):
     assert value_op_base_set["C"].parent == value_op_base_set["A"]
 
 
-
 def test_get_random_node_root(two_base_trees):
     tree1, tree2, value_op_base_set = two_base_trees
 
@@ -171,3 +170,38 @@ def test_get_random_node(two_base_trees):
 
     assert isinstance(o1, ValueNode)
     assert isinstance(o2, OperatorNode)
+
+
+@pytest.fixture
+def weighted_mean_tree():
+    a = np.array([[2, 2], [3, 3]])
+    c = np.array([[3, 3], [4, 4]])
+    d = np.array([[4, 4], [5, 5]])
+
+    nset = {
+        "A": ValueNode(None, a, 1),
+        "C": ValueNode(None, c, 2),
+        "D": ValueNode(None, d, 3),
+    }
+
+    weights = [0.3, 0.2, 0.5]
+
+    nset["B"] = WeightedMeanNode([nset["C"], nset["D"]], weights)  # type: ignore
+    nset["A"].add_child(nset["B"])
+
+    return nset
+
+
+# this should test all parametrized nodes
+def test_save_and_load_architecture(weighted_mean_tree):
+    import os
+
+    tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
+
+    if not os.path.exists("test_dump"):
+        os.makedirs("test_dump")
+    path = "test_dump/test_tree.pkl"
+
+    tree.save_tree_architecture(path)
+    loaded_tree = Tree.load_tree_architecture(path)
+    np.testing.assert_equal(loaded_tree.nodes["op_nodes"][0].weights, weighted_mean_tree["B"].weights)

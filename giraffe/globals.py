@@ -1,4 +1,5 @@
 import os
+
 from giraffe.backend.backend import Backend
 
 Backend.set_backend(os.environ.get("BACKEND", "numpy"))

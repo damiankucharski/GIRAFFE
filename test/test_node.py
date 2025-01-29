@@ -1,20 +1,20 @@
+from unittest import mock
+
+import numpy as np
 import pytest
+
+from giraffe.backend.numpy_backend import NumpyBackend as B
 from giraffe.node import (
-    Node,
-    ValueNode,
-    OperatorNode,
-    MeanNode,
-    WeightedMeanNode,
-    MinNode,
     MaxNode,
-    check_if_both_types_same_node_variant,
+    MeanNode,
+    MinNode,
+    Node,
+    OperatorNode,
+    ValueNode,
+    WeightedMeanNode,
     check_if_both_types_operators,
     check_if_both_types_values,
 )
-import numpy as np
-from giraffe.backend.numpy_backend import NumpyBackend as B
-from unittest import mock
-from typing import Union
 
 
 @pytest.fixture(autouse=True)

@@ -1,4 +1,5 @@
 import torch
+
 from giraffe.backend.backend_interface import BackendInterface
 
 

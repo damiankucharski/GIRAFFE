@@ -1,5 +1,6 @@
-from giraffe.backend.backend_interface import BackendInterface
 from typing import Type
+
+from giraffe.backend.backend_interface import BackendInterface
 
 
 class Backend:

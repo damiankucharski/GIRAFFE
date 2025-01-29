@@ -3,6 +3,7 @@ from loguru import logger
 
 from giraffe.globals import BACKEND as B
 from giraffe.node import Node, OperatorNode, ValueNode, check_if_both_types_same_node_variant
+from giraffe.utils import Pickle
 
 
 class Tree:
@@ -138,11 +139,15 @@ class Tree:
         return list(set([node.id for node in self.nodes["value_nodes"]]))
 
     def save_tree_architecture(self, output_path):  # TODO: needs adjustment for weighted node
-        pass
+        copy_tree = self.copy()
+        for value_node in copy_tree.nodes["value_nodes"]:
+            value_node.value = value_node.evaluation = None
+
+        Pickle.save(output_path, copy_tree)
 
     @staticmethod
     def load_tree_architecture(architecture_path):  # TODO: needs adjustmed for weighted node
-        pass
+        return Pickle.load(architecture_path)
 
     @staticmethod
     def load_tree(architecture_path, preds_directory, tensors={}):

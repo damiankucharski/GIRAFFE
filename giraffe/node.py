@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Sequence, Union, cast
+from typing import List, Optional, Sequence, Union, cast
 
 import numpy as np
 
@@ -83,6 +83,8 @@ class Node:
     def copy_subtree(self):
         """
         Copy the subtree rooted at this node.
+        Does not call "add_child" method to avoid any other operations like weight adjustments.
+        Directly sets parent and children references.
         Returns:
         - Copy of the subtree rooted at this node
         """
@@ -90,7 +92,8 @@ class Node:
 
         for child in self.children:
             child_copy = child.copy_subtree()
-            self_copy.add_child(child_copy)
+            self_copy.children.append(child_copy)  # not "append_child" to avoid any other operations
+            child_copy.parent = self_copy
 
         return self_copy
 
@@ -164,14 +167,12 @@ class OperatorNode(Node):
     def __init__(
         self,
         children: Optional[Sequence[ValueNode]],
-        operator: Callable = lambda x: x,
     ):
         super().__init__(children)
-        self.operator = operator
 
     def calculate(self):
         concat = self._concat()
-        return self.operator(concat)
+        return self.op(concat)
 
     def _concat(self):
         assert self.parent is not None, "OperatorNode must have a parent to be calculated"
@@ -186,6 +187,9 @@ class OperatorNode(Node):
     def create_node(parent, children):
         raise NotImplementedError()
 
+    def op(self, x):
+        return x
+
 
 class MeanNode(OperatorNode):
     """
@@ -195,7 +199,7 @@ class MeanNode(OperatorNode):
     """
 
     def __init__(self, children: Optional[Sequence[ValueNode]]):
-        super().__init__(children, self.op)
+        super().__init__(children)
 
     def __str__(self) -> str:
         return "MeanNode"
@@ -229,7 +233,7 @@ class WeightedMeanNode(OperatorNode):
         weights: List[float],
     ):
         self._weights = weights
-        super().__init__(children, self.op)
+        super().__init__(children)
 
         self._weight_sum_assertion()
 
@@ -318,7 +322,7 @@ class MaxNode(OperatorNode):
     """
 
     def __init__(self, children: Optional[Sequence[ValueNode]]):
-        super().__init__(children, self.op)
+        super().__init__(children)
 
     def __str__(self) -> str:
         return "MaxNode"
@@ -349,7 +353,7 @@ class MinNode(OperatorNode):
     """
 
     def __init__(self, children: Optional[Sequence[ValueNode]]):
-        super().__init__(children, self.op)
+        super().__init__(children)
 
     def __str__(self) -> str:
         return "MinNode"
