@@ -7,3 +7,12 @@ repos:
       - id: ruff
       # Run the formatter.
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest-and-mypy
+        name: Run tests and type checking
+        entry: make all_test
+        language: system
+        pass_filenames: false
+        stages: [push]

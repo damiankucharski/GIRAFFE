@@ -140,3 +140,34 @@ def test_replace_at(two_base_trees):
     assert tree1.root == value_op_base_set["A"]
     assert value_op_base_set["A"].children == [value_op_base_set["C"]]
     assert value_op_base_set["C"].parent == value_op_base_set["A"]
+
+
+
+def test_get_random_node_root(two_base_trees):
+    tree1, tree2, value_op_base_set = two_base_trees
+
+    a_copy = value_op_base_set["A"].copy()
+
+    t = Tree.create_tree_from_root(a_copy)
+
+    o1 = t.get_random_node("value_nodes", True, True)
+
+    assert o1 == a_copy
+
+    with pytest.raises(ValueError):
+        t.get_random_node("op_nodes", True, True)
+    with pytest.raises(ValueError):
+        t.get_random_node("value_nodes", False, True)
+
+
+def test_get_random_node(two_base_trees):
+    tree1, tree2, value_op_base_set = two_base_trees
+
+    o1 = tree1.get_random_node("value_nodes", True, True)
+    o2 = tree1.get_random_node("op_nodes", True, True)
+
+    assert o1 in value_op_base_set.values()
+    assert o2 in value_op_base_set.values()
+
+    assert isinstance(o1, ValueNode)
+    assert isinstance(o2, OperatorNode)

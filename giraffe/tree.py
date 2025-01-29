@@ -1,3 +1,4 @@
+import numpy as np
 from loguru import logger
 
 from giraffe.globals import BACKEND as B
@@ -114,7 +115,25 @@ class Tree:
         self._clean_evals()
 
     def get_random_node(self, nodes_type: str | None = None, allow_root=True, allow_leaves=True):
-        pass
+        if self.root.children == []:
+            if allow_root:
+                if nodes_type is None or nodes_type == "value_nodes":
+                    return self.root
+                else:
+                    raise ValueError("Tree has only root node and nodes_type is not value_nodes")
+            else:
+                raise ValueError("Tree has only root node and allow_root is set to False")
+
+        if nodes_type is None:
+            nodes_type = np.random.choice(["value_nodes", "op_nodes"])
+
+        order = np.arange(len(self.nodes[nodes_type]))
+        for i in order:
+            node = self.nodes[nodes_type][i]
+            if (allow_leaves or node.children != []) and (allow_root or node != self.root):
+                return node
+        raise ValueError("No node found that complies to the constraints")
+
 
     def get_unique_value_node_ids(self):
         pass
