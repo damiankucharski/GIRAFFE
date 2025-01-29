@@ -145,7 +145,7 @@ class Tree:
         pass
 
     @staticmethod
-    def load_tree(architecture_path, preds_directory, tensors={}):  # NEEDS TO USE BACKEND
+    def load_tree(architecture_path, preds_directory, tensors={}):  # type: ignore
         pass
 
     def __repr__(self):
