@@ -134,7 +134,6 @@ class Tree:
                 return node
         raise ValueError("No node found that complies to the constraints")
 
-
     def get_unique_value_node_ids(self):
         return list(set([node.id for node in self.nodes["value_nodes"]]))
 
