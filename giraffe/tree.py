@@ -1,7 +1,10 @@
+from typing import Tuple, cast
+
 import numpy as np
 from loguru import logger
 
 from giraffe.globals import BACKEND as B
+from giraffe.globals import DEVICE
 from giraffe.node import Node, OperatorNode, ValueNode, check_if_both_types_same_node_variant
 from giraffe.utils import Pickle
 
@@ -48,7 +51,8 @@ class Tree:
         return self.evaluation
 
     def copy(self):
-        return Tree.create_tree_from_root(self.root.copy_subtree())
+        root_copy: ValueNode = cast(ValueNode, self.root.copy_subtree())
+        return Tree.create_tree_from_root(root_copy)
 
     def prune_at(self, node: Node):  # remove node from the tree along with its children
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
@@ -128,6 +132,8 @@ class Tree:
         if nodes_type is None:
             nodes_type = np.random.choice(["value_nodes", "op_nodes"])
 
+        assert nodes_type is not None, "Nodes type cannot be None"
+
         order = np.arange(len(self.nodes[nodes_type]))
         for i in order:
             node = self.nodes[nodes_type][i]
@@ -146,12 +152,22 @@ class Tree:
         Pickle.save(output_path, copy_tree)
 
     @staticmethod
-    def load_tree_architecture(architecture_path):  # TODO: needs adjustmed for weighted node
+    def load_tree_architecture(architecture_path) -> "Tree":  # TODO: needs adjustmed for weighted node
         return Pickle.load(architecture_path)
 
     @staticmethod
-    def load_tree(architecture_path, preds_directory, tensors={}):
-        pass
+    def load_tree(architecture_path, preds_directory, tensors={}) -> Tuple["Tree", dict]:
+        current_tensors = {}
+        current_tensors.update(tensors)  # tensors argument is mutable and we do not want to modify it
+
+        loaded = Tree.load_tree_architecture(architecture_path)
+        for value_node in loaded.nodes["value_nodes"]:
+            node_id = value_node.id
+            if node_id not in current_tensors:
+                current_tensors[node_id] = B.load(preds_directory / str(node_id), DEVICE)
+            value_node.value = current_tensors[node_id]
+
+        return loaded, current_tensors
 
     def __repr__(self):
         return "_".join(node.code for node in self.root.get_nodes())

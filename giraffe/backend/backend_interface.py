@@ -1,7 +1,4 @@
-from abc import ABC
-
-
-class BackendInterface(ABC):
+class BackendInterface:
     @staticmethod
     def tensor(x):
         raise NotImplementedError()
@@ -61,4 +58,8 @@ class BackendInterface(ABC):
 
     @staticmethod
     def unsqueeze(x, axis):
+        raise NotImplementedError()
+
+    @staticmethod
+    def load(path, device=None):
         raise NotImplementedError()

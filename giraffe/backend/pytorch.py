@@ -82,3 +82,7 @@ class PyTorchBackend(BackendInterface):
     @staticmethod
     def unsqueeze(x, axis):
         return x.unsqueeze(axis)
+
+    @staticmethod
+    def load(path, device=None):
+        return torch.load(path, map_location=device)

@@ -1,9 +1,11 @@
-from typing import List, Optional, Sequence, Union, cast
+from typing import List, Optional, Sequence, TypeVar, Union, cast
 
 import numpy as np
 
 from giraffe.globals import BACKEND as B
 from giraffe.type import Tensor
+
+T = TypeVar("T", bound="Node")
 
 
 class Node:
@@ -148,7 +150,7 @@ class ValueNode(Node):
         super().add_child(child_node)
         self.evaluation = None
 
-    def copy(self):
+    def copy(self) -> "ValueNode":
         return ValueNode(None, self.value, self.id)
 
     @property
@@ -184,7 +186,7 @@ class OperatorNode(Node):
         )
 
     @staticmethod
-    def create_node(parent, children):
+    def create_node(children):
         raise NotImplementedError()
 
     def op(self, x):

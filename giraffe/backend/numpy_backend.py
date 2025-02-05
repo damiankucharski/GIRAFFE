@@ -61,3 +61,7 @@ class NumpyBackend(BackendInterface):
     @staticmethod
     def unsqueeze(x, axis):
         return np.expand_dims(x, axis)
+
+    @staticmethod
+    def load(path, device=None):
+        return np.load(path)

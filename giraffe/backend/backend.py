@@ -1,10 +1,11 @@
 from typing import Type
 
 from giraffe.backend.backend_interface import BackendInterface
+from giraffe.backend.numpy_backend import NumpyBackend
 
 
 class Backend:
-    _current_backend: Type[BackendInterface] | None = None
+    _current_backend: Type[BackendInterface] = NumpyBackend
 
     @classmethod
     def set_backend(cls, backend_name):  # TODO: Add option to set backend by providing class instead
@@ -13,14 +14,10 @@ class Backend:
 
             cls._current_backend = PyTorchBackend
         elif backend_name == "numpy":
-            from giraffe.backend.numpy_backend import NumpyBackend
-
             cls._current_backend = NumpyBackend
         else:
             raise ValueError(f"Invalid backend: {backend_name}")
 
     @classmethod
-    def get_backend(cls):
-        if cls._current_backend is None:
-            cls.set_backend("numpy")  # Set a default
+    def get_backend(cls) -> Type[BackendInterface]:
         return cls._current_backend

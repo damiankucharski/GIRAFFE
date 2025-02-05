@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -179,9 +181,9 @@ def weighted_mean_tree():
     d = np.array([[4, 4], [5, 5]])
 
     nset = {
-        "A": ValueNode(None, a, 1),
-        "C": ValueNode(None, c, 2),
-        "D": ValueNode(None, d, 3),
+        "A": ValueNode(None, a, "1.npy"),
+        "C": ValueNode(None, c, "2.npy"),
+        "D": ValueNode(None, d, "3.npy"),
     }
 
     weights = [0.3, 0.2, 0.5]
@@ -198,10 +200,36 @@ def test_save_and_load_architecture(weighted_mean_tree):
 
     tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
 
-    if not os.path.exists("test_dump"):
-        os.makedirs("test_dump")
-    path = "test_dump/test_tree.pkl"
+    if not os.path.exists(".test_dump"):
+        os.makedirs(".test_dump")
+    path = ".test_dump/test_tree_architecture.pkl"
 
     tree.save_tree_architecture(path)
     loaded_tree = Tree.load_tree_architecture(path)
     np.testing.assert_equal(loaded_tree.nodes["op_nodes"][0].weights, weighted_mean_tree["B"].weights)
+
+
+def test_save_and_load_tree(weighted_mean_tree):
+    import os
+
+    tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
+
+    if not os.path.exists(".test_dump"):
+        os.makedirs(".test_dump")
+    if not os.path.exists(".test_dump/test_tensors"):
+        os.makedirs(".test_dump/test_tensors")
+
+    for value_node in tree.nodes["value_nodes"]:
+        np.save(f".test_dump/test_tensors/{value_node.id}", value_node.value)
+
+    path = Path(".test_dump/test_tree.pkl")
+
+    tree.save_tree_architecture(path)
+
+    loaded_tree, _ = Tree.load_tree(path, Path(".test_dump/test_tensors"))
+
+    np.testing.assert_equal(loaded_tree.nodes["op_nodes"][0].weights, weighted_mean_tree["B"].weights)
+
+    for tree_node, loaded_tree_node in zip(tree.nodes["value_nodes"], loaded_tree.nodes["value_nodes"], strict=False):
+        assert tree_node.id == loaded_tree_node.id
+        np.testing.assert_equal(tree_node.value, loaded_tree_node.value)
