@@ -277,6 +277,8 @@ class WeightedMeanNode(OperatorNode):
         self._weight_sum_assertion()
         self._weight_length_assertion()
 
+        return child_node
+
     def replace_child(self, child, replacement_node):
         super().replace_child(child, replacement_node)
         self._weight_length_assertion()
@@ -376,6 +378,14 @@ class MinNode(OperatorNode):
     @staticmethod
     def create_node(children):
         return MinNode(children)
+
+
+class ThresholdNode(OperatorNode):
+    """
+    Chooses values closest (or furthest away) from the provided threshold value)
+    """
+
+    pass
 
 
 def check_if_both_types_values(node1, node2):
