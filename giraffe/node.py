@@ -14,14 +14,23 @@ class Node:
     capable of holding children and a reference to their parent node.
 
     When created, parent reference cannot be specified. The reason for it is to create uniderectional
-    responsibility for link creation. A node should be responsible for creating and breakig links with its children,
+    responsibility for link creation. A node should be responsible for creating and breaking links with its children,
     by setting their parent links.
+
+    Attributes:
+        parent (Union[Node, None]): A reference to a parent node, of which this node is a child.
+        children (List[Node]): A list of references to a children nodes.
     """
 
     def __init__(self, children: Optional[Sequence["Node"]] = None):
+        """
+        Create a node
+
+        Args:
+            children (Optional[Sequence["Node"]]): An optional list like sequence of children of the node
+        """
         self.parent: Union[Node, None] = None
         self.children: List[Node] = list(children) if children is not None else []
-        self.type = None
 
         for child in self.children:
             child.parent = self
