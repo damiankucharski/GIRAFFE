@@ -3,7 +3,7 @@ from typing import List, Optional, Sequence, TypeVar, Union, cast
 import numpy as np
 
 from giraffe.globals import BACKEND as B
-from giraffe.type import Tensor
+from giraffe.types import Tensor
 
 T = TypeVar("T", bound="Node")
 
