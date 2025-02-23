@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from giraffe.globals import BACKEND as B
 from giraffe.node import OperatorNode, ValueNode, WeightedMeanNode
 from giraffe.tree import Tree
-from giraffe.globals import BACKEND as B
 
 
 @pytest.fixture
@@ -198,13 +198,7 @@ def weighted_mean_tree():
 def test_weighted_tree_evaluation(weighted_mean_tree):
     tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
     evaluation = tree.evaluation
-    np.testing.assert_array_equal(B.to_numpy(evaluation), np.array(
-        [
-            [3.2, 3.2], [4.2, 4.2]
-        ]
-    ))
-
-
+    np.testing.assert_array_equal(B.to_numpy(evaluation), np.array([[3.2, 3.2], [4.2, 4.2]]))
 
 
 # this should test all parametrized nodes

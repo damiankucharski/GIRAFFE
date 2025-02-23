@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, TypeVar, Union, cast
+from typing import Generic, List, Optional, Sequence, TypeVar, Union, cast
 
 import numpy as np
 
@@ -131,7 +131,7 @@ class Node:
         return self.code
 
 
-class ValueNode(Node):
+class ValueNode(Node, Generic[Tensor]):
     """
     Represents a Value Node in a computational tree.
 
@@ -310,13 +310,19 @@ class WeightedMeanNode(OperatorNode):
         return w
 
     @staticmethod
-    def create_node(children):
-        weights = [np.random.uniform(0, 1)]  # initial weight for parent
-        weight_left = 1 - weights[0]
-        for _ in children[:-1]:
-            weights.append(np.random.uniform(0, weight_left))
-            weight_left -= weights[-1]
-        weights.append(weight_left)
+    def create_node(children: Sequence[ValueNode]):  # TODO: add tests for that function
+        if len(children) == 0:
+            weights = [1.0]
+        elif len(children) == 1:
+            parent_weight = np.random.uniform(0, 1)
+            weights = [parent_weight, 1 - parent_weight]
+        else:
+            weights = [np.random.uniform(0, 1)]  # initial weight for parent
+            weight_left = 1 - weights[0]
+            for _ in children[:-1]:
+                weights.append(np.random.uniform(0, weight_left))
+                weight_left -= weights[-1]
+            weights.append(weight_left)
 
         return WeightedMeanNode(children, weights)
 

@@ -36,7 +36,8 @@ class Tree:
 
     @property
     def evaluation(self):
-        # return B.squeeze(self.root.evaluation if self.root.evaluation is not None else self.root.calculate()) # WARNING: This may not make sense for cases other than binary classification (Squeezing)
+        # WARNING: This may not make sense for cases other than binary classification (Squeezing)
+        # return B.squeeze(self.root.evaluation if self.root.evaluation is not None else self.root.calculate())
         return self.root.evaluation if self.root.evaluation is not None else self.root.calculate()
 
     @property
