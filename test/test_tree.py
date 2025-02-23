@@ -5,6 +5,7 @@ import pytest
 
 from giraffe.node import OperatorNode, ValueNode, WeightedMeanNode
 from giraffe.tree import Tree
+from giraffe.globals import BACKEND as B
 
 
 @pytest.fixture
@@ -194,8 +195,20 @@ def weighted_mean_tree():
     return nset
 
 
+def test_weighted_tree_evaluation(weighted_mean_tree):
+    tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
+    evaluation = tree.evaluation
+    np.testing.assert_array_equal(B.to_numpy(evaluation), np.array(
+        [
+            [3.2, 3.2], [4.2, 4.2]
+        ]
+    ))
+
+
+
+
 # this should test all parametrized nodes
-def test_save_and_load_architecture(weighted_mean_tree):
+def test_save_and_load_architecture_weighted_mean(weighted_mean_tree):
     import os
 
     tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
@@ -209,7 +222,7 @@ def test_save_and_load_architecture(weighted_mean_tree):
     np.testing.assert_equal(loaded_tree.nodes["op_nodes"][0].weights, weighted_mean_tree["B"].weights)
 
 
-def test_save_and_load_tree(weighted_mean_tree):
+def test_save_and_load_tree_weighted_tree(weighted_mean_tree):
     import os
 
     tree = Tree.create_tree_from_root(weighted_mean_tree["A"])
