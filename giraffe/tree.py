@@ -1,4 +1,4 @@
-from typing import Tuple, cast
+from typing import Tuple, cast, Self
 
 import numpy as np
 from loguru import logger
@@ -100,7 +100,7 @@ class Tree:
 
     def replace_at(
         self, at: Node, replacement: Node
-    ):  # like prune at and then append after parent, but without parameters adjustment (may be worth it to reimplement)
+    ) -> Self:  # like prune at and then append after parent, but without parameters adjustment (may be worth it to reimplement)
         assert isinstance(replacement, type(at)), "Replacement must be of the same type as the node being replaced"
         at_parent = at.parent
 
@@ -120,6 +120,7 @@ class Tree:
             self.nodes["op_nodes"].append(replacement)
 
         self._clean_evals()
+        return self
 
     def get_random_node(self, nodes_type: str | None = None, allow_root=True, allow_leaves=True):
         if self.root.children == []:

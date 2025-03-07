@@ -29,3 +29,13 @@ def crossover(tree1: Tree, tree2: Tree):
 
     if (len(tree1.nodes["operator_nodes"]) > 0) & (len(tree2.nodes["operator_nodes"]) > 0):
         allowable_node_types.append("operator_nodes")
+    nodes_type = np.random.choice(allowable_node_types)
+
+    tree1, tree2 = tree1.copy(), tree2.copy()
+    node1, node2 = tree1.get_random_node(nodes_type), tree2.get_random_node(nodes_type)
+    branch1, branch2 = node1.copy_subtree(), node2.copy_subtree()
+
+    tree1.replace_at(node1, branch2).recalculate()
+    tree2.replace_at(node2, branch1).recalculate()
+
+    return tree1, tree2
