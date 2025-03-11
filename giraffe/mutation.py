@@ -1,4 +1,4 @@
-from typing import Sequence, Type
+from typing import Sequence, Type, Callable
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from giraffe.types import Tensor
 
 
 def append_new_node_mutation(
-    tree: Tree, models: Sequence[Tensor], ids: None | Sequence[str | int] = None, allowed_ops: tuple[Type[OperatorNode], ...] = (MeanNode,)
+    tree: Tree, models: Sequence[Tensor], ids: None | Sequence[str | int] = None, allowed_ops: tuple[Type[OperatorNode], ...] = (MeanNode,), **kwargs
 ):
     tree = tree.copy()
 
@@ -30,3 +30,29 @@ def append_new_node_mutation(
         tree.append_after(node, val_node)
 
     return tree
+
+def lose_branch_mutation(tree: Tree, **kwargs):
+    tree = tree.copy()
+    assert tree.nodes_count >= 3, "Tree is too small"
+    node = tree.get_random_node(allow_leaves=False, allow_root=False)
+    tree.prune_at(node)
+    return tree
+
+def new_tree_from_branch_mutation(tree: Tree, **kwargs):
+    tree = tree.copy()
+    assert len(tree.nodes["value_nodes"]) > 1
+    node = tree.get_random_node(nodes_type = "value_nodes", allow_leaves=True, allow_root=False)
+    sapling_node = tree.prune_at(node)
+    assert isinstance(sapling_node, ValueNode)
+    new_tree = Tree.create_tree_from_root(sapling_node)
+    return new_tree
+
+
+def get_allowed_mutations(tree):
+    allowed_mutations: list[Callable] = [append_new_node_mutation,]
+
+    if tree.nodes_count >= 3:
+        allowed_mutations.append(lose_branch_mutation)
+    if len(tree.nodes["value_nodes"]) > 1:
+        allowed_mutations.append(new_tree_from_branch_mutation)
+    return allowed_mutations
