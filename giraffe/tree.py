@@ -56,7 +56,7 @@ class Tree:
         root_copy: ValueNode = cast(ValueNode, self.root.copy_subtree())
         return Tree.create_tree_from_root(root_copy)
 
-    def prune_at(self, node: Node):  # remove node from the tree along with its children
+    def prune_at(self, node: Node) -> Node:  # remove node from the tree along with its children
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
             raise ValueError("Node not found in tree")
 
@@ -132,16 +132,19 @@ class Tree:
             else:
                 raise ValueError("Tree has only root node and allow_root is set to False")
 
-        if nodes_type is None:
-            nodes_type = np.random.choice(["value_nodes", "op_nodes"])
+        if nodes_type is not None:
+            assert nodes_type in ("value_nodes", "op_nodes"), f"Unsupported node type \"{nodes_type}\" selected."
+            nodes_types = [nodes_type,]
+        else:
+            nodes_types = list(np.random.permutation(["op_nodes", "value_nodes"]))
 
-        assert nodes_type is not None, "Nodes type cannot be None"
-
-        order = np.arange(len(self.nodes[nodes_type]))
-        for i in order:
-            node = self.nodes[nodes_type][i]
-            if (allow_leaves or node.children != []) and (allow_root or node != self.root):
-                return node
+        for nodes_type in nodes_types:
+            assert nodes_type is not None, "Nodes type cannot be None"
+            order = np.arange(len(self.nodes[nodes_type]))
+            for i in order:
+                node = self.nodes[nodes_type][i]
+                if (allow_leaves or node.children != []) and (allow_root or node != self.root):
+                    return node
         raise ValueError("No node found that complies to the constraints")
 
     def get_unique_value_node_ids(self):
