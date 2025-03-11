@@ -1,3 +1,5 @@
+import numpy as np
+
 class BackendInterface:
     @staticmethod
     def tensor(x):
@@ -29,7 +31,7 @@ class BackendInterface:
         raise NotImplementedError()
 
     @staticmethod
-    def to_numpy(x):
+    def to_numpy(x) -> np.ndarray:
         raise NotImplementedError()
 
     @staticmethod
