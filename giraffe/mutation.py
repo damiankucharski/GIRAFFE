@@ -4,7 +4,7 @@ import numpy as np
 
 from giraffe.node import MeanNode, OperatorNode, ValueNode
 from giraffe.tree import Tree
-from giraffe.types import Tensor
+from giraffe.lib_types import Tensor
 
 
 def append_new_node_mutation(

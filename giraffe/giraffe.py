@@ -3,12 +3,12 @@ from typing import Callable, Iterable, Union
 
 import numpy as np
 
+import giraffe.callback as callback
 from giraffe.backend.backend import Backend
-from giraffe.callback import Callback
 from giraffe.globals import BACKEND as B
 from giraffe.globals import DEVICE
 from giraffe.tree import Tree
-from giraffe.types import Tensor
+import giraffe.lib_types as lib_types
 
 
 class Giraffe:
@@ -19,8 +19,8 @@ class Giraffe:
         population_size: int,
         population_multiplier: int,
         tournament_size: int,
-        fitness_function: Callable[[Tree, Tensor], float],
-        callbacks: Iterable[Callback] = tuple(),
+        fitness_function: Callable[[Tree, lib_types.Tensor], float],
+        callbacks: Iterable[callback.Callback] = tuple(),
         backend: Union[Backend, None] = None,
         seed: int = 0,
     ):

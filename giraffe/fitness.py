@@ -2,7 +2,7 @@ import numpy as np
 
 from giraffe.globals import BACKEND as B
 from giraffe.tree import Tree
-from giraffe.types import Tensor
+from giraffe.lib_types import Tensor
 
 
 def average_precision_fitness(tree: Tree, gt: Tensor):
