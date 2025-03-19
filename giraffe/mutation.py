@@ -1,4 +1,4 @@
-from typing import Sequence, Type, Callable
+from typing import Callable, Sequence, Type
 
 import numpy as np
 
@@ -31,6 +31,7 @@ def append_new_node_mutation(
 
     return tree
 
+
 def lose_branch_mutation(tree: Tree, **kwargs):
     tree = tree.copy()
     assert tree.nodes_count >= 3, "Tree is too small"
@@ -38,10 +39,11 @@ def lose_branch_mutation(tree: Tree, **kwargs):
     tree.prune_at(node)
     return tree
 
+
 def new_tree_from_branch_mutation(tree: Tree, **kwargs):
     tree = tree.copy()
     assert len(tree.nodes["value_nodes"]) > 1
-    node = tree.get_random_node(nodes_type = "value_nodes", allow_leaves=True, allow_root=False)
+    node = tree.get_random_node(nodes_type="value_nodes", allow_leaves=True, allow_root=False)
     sapling_node = tree.prune_at(node)
     assert isinstance(sapling_node, ValueNode)
     new_tree = Tree.create_tree_from_root(sapling_node)
@@ -49,7 +51,9 @@ def new_tree_from_branch_mutation(tree: Tree, **kwargs):
 
 
 def get_allowed_mutations(tree):
-    allowed_mutations: list[Callable] = [append_new_node_mutation,]
+    allowed_mutations: list[Callable] = [
+        append_new_node_mutation,
+    ]
 
     if tree.nodes_count >= 3:
         allowed_mutations.append(lose_branch_mutation)

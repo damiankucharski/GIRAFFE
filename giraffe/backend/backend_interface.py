@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class BackendInterface:
     @staticmethod
     def tensor(x):

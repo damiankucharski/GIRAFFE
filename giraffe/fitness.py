@@ -1,10 +1,9 @@
+import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 from giraffe.globals import BACKEND as B
 from giraffe.tree import Tree
 from giraffe.types import Tensor
-
-import numpy as np
 
 
 def average_precision_fitness(tree: Tree, gt: Tensor):

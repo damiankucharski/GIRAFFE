@@ -7,9 +7,7 @@ from giraffe.tree import Tree
 def tournament_selection_indexes(fitnesses: np.ndarray, tournament_size: int = 5) -> np.ndarray:
     assert len(fitnesses.shape) == 1
     if len(fitnesses) >= (tournament_size - 1):
-        raise ValueError(
-            "Size of the tournament should be at least 1 less than number of participans but" f"{len(fitnesses)=} and {tournament_size=}"
-        )
+        raise ValueError(f"Size of the tournament should be at least 1 less than number of participans but{len(fitnesses)=} and {tournament_size=}")
 
     if len(fitnesses) < (2 * tournament_size):
         logger.warning(

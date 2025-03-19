@@ -1,4 +1,4 @@
-from typing import Tuple, cast, Self
+from typing import Self, Tuple, cast
 
 import numpy as np
 from loguru import logger
@@ -133,8 +133,10 @@ class Tree:
                 raise ValueError("Tree has only root node and allow_root is set to False")
 
         if nodes_type is not None:
-            assert nodes_type in ("value_nodes", "op_nodes"), f"Unsupported node type \"{nodes_type}\" selected."
-            nodes_types = [nodes_type,]
+            assert nodes_type in ("value_nodes", "op_nodes"), f'Unsupported node type "{nodes_type}" selected.'
+            nodes_types = [
+                nodes_type,
+            ]
         else:
             nodes_types = list(np.random.permutation(["op_nodes", "value_nodes"]))
 
