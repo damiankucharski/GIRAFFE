@@ -1,4 +1,7 @@
-from giraffe.giraffe import Giraffe
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from giraffe.giraffe import Giraffe
 
 
 class Callback:

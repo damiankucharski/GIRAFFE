@@ -4,6 +4,7 @@ from typing import Callable, Iterable, Union
 import numpy as np
 
 from giraffe.backend.backend import Backend
+from giraffe.callback import Callback
 from giraffe.globals import BACKEND as B
 from giraffe.globals import DEVICE
 from giraffe.tree import Tree
@@ -19,6 +20,7 @@ class Giraffe:
         population_multiplier: int,
         tournament_size: int,
         fitness_function: Callable[[Tree, Tensor], float],
+        callbacks: Iterable[Callback] = tuple(),
         backend: Union[Backend, None] = None,
         seed: int = 0,
     ):
@@ -31,9 +33,19 @@ class Giraffe:
         self.population_multiplier = population_multiplier
         self.tournament_size = tournament_size
         self.fitness_function = fitness_function
+        self.callbacks = callbacks
 
         self.train_tensors, self.gt_tensor = self._build_train_tensors(preds_source, gt_path)
         self._validate_input()
+
+
+    def _call_hook(self, hook_name):
+        for callback in self.callbacks:
+            getattr(callback, hook_name)(self)
+
+
+    def run_iteration(self):
+        pass
 
     def _build_train_tensors(self, preds_source, gt_path):
         if isinstance(preds_source, str):
