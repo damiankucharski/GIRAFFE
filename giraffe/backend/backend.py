@@ -9,7 +9,7 @@ class Backend:
 
     @classmethod
     def set_backend(cls, backend_name):  # TODO: Add option to set backend by providing class instead
-        if backend_name == "torch":
+        if backend_name == "torch" or backend_name == "pytorch":
             from giraffe.backend.pytorch import PyTorchBackend
 
             cls._current_backend = PyTorchBackend

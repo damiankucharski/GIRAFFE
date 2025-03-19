@@ -1,4 +1,5 @@
 import numpy as np
+from loguru import logger
 
 from giraffe.backend.backend_interface import BackendInterface
 
@@ -64,4 +65,9 @@ class NumpyBackend(BackendInterface):
 
     @staticmethod
     def load(path, device=None):
-        return np.load(path)
+        if not any([str(path).endswith(suffix) for suffix in [".npy", ".npz"]]):
+            logger.warning(f"file extension for {path} is different from common numpy extensions: .npy or .npz")
+        loaded = np.load(path)
+        if not isinstance(loaded, np.ndarray):
+            raise ValueError(f"file {path} is not a numpy file")
+        return loaded

@@ -1,5 +1,6 @@
 from giraffe.giraffe import Giraffe
 
+
 class Callback:
     def __init__(self) -> None:
         pass

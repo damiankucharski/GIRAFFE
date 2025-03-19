@@ -1,4 +1,5 @@
 import torch
+from loguru import logger
 
 from giraffe.backend.backend_interface import BackendInterface
 
@@ -85,4 +86,9 @@ class PyTorchBackend(BackendInterface):
 
     @staticmethod
     def load(path, device=None):
-        return torch.load(path, map_location=device)
+        if not any([str(path).endswith(suffix) for suffix in [".pt", ".pth"]]):
+            logger.warning(f"file extension for {path} is different from common pytorch extensions: .pt or .pth")
+        loaded = torch.load(path, map_location=device)
+        if not isinstance(loaded, torch.Tensor):
+            raise ValueError(f"file {path}  is not a torch.Tensor")
+        return loaded
