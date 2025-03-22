@@ -2,9 +2,9 @@ from typing import Callable, Sequence, Type
 
 import numpy as np
 
+from giraffe.lib_types import Tensor
 from giraffe.node import MeanNode, OperatorNode, ValueNode
 from giraffe.tree import Tree
-from giraffe.lib_types import Tensor
 
 
 def append_new_node_mutation(

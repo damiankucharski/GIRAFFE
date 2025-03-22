@@ -1,13 +1,13 @@
-from typing import Dict, Tuple
-from giraffe.lib_types import Tensor
+from typing import Dict, List
 
 import numpy as np
 
+from giraffe.lib_types import Tensor
 from giraffe.node import ValueNode
 from giraffe.tree import Tree
 
 
-def initialize_individuals(tensors_dict: Dict[str, Tensor], n:int, exclude_ids=tuple()):
+def initialize_individuals(tensors_dict: Dict[str, Tensor], n:int, exclude_ids=tuple()) -> List[Tree]:
     order = np.arange(len(tensors_dict))
     np.random.shuffle(order)
 
@@ -29,3 +29,10 @@ def initialize_individuals(tensors_dict: Dict[str, Tensor], n:int, exclude_ids=t
         raise Exception("Could not generate as many examples")
 
     return new_trees
+
+
+def choose_n_best(trees: List[Tree], fitnesses: np.ndarray, n: int):
+    pass
+
+def choose_pareto(trees: List[Tree], fitnesses: np.ndarray, n: int):
+    pass
