@@ -131,7 +131,7 @@ class Node:
         return self.code
 
 
-class ValueNode(Node, Generic[Tensor]):
+class ValueNode(Node):
     """
     Represents a Value Node in a computational tree.
 

@@ -1,13 +1,18 @@
+from typing import Dict, Tuple
+from giraffe.lib_types import Tensor
+
 import numpy as np
 
 from giraffe.node import ValueNode
 from giraffe.tree import Tree
 
 
-def initialize_individuals(tensors: np.ndarray, ids: np.ndarray, n, exclude_ids=tuple()):
-    assert len(tensors) == len(ids)
-    order = np.arange(len(tensors))
-    tensors, ids = tensors[order], ids[order]
+def initialize_individuals(tensors_dict: Dict[str, Tensor], n:int, exclude_ids=tuple()):
+    order = np.arange(len(tensors_dict))
+    np.random.shuffle(order)
+
+    ids = np.array(list(tensors_dict.keys()))[order]
+    tensors = np.array(list(tensors_dict.values()))[order]
 
     new_trees = []
     count = 0
@@ -19,6 +24,7 @@ def initialize_individuals(tensors: np.ndarray, ids: np.ndarray, n, exclude_ids=
         root: ValueNode = ValueNode(children=None, value=tensor, id=_id)
         tree = Tree.create_tree_from_root(root)
         new_trees.append(tree)
+        count += 1
     if count < n:
         raise Exception("Could not generate as many examples")
 

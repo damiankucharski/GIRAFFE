@@ -1,3 +1,3 @@
-from typing import TypeVar
+from typing import Any, TypeAlias
 
-Tensor = TypeVar("Tensor", bound=None)
+Tensor: TypeAlias = Any

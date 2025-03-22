@@ -15,7 +15,7 @@ repos:
     hooks:
       - id: pytest-and-mypy
         name: Run tests and type checking
-        entry: make all_test
+        entry: make test_all 
         language: system
         pass_filenames: false
         stages: [push]

@@ -63,19 +63,19 @@ ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_configs = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 
 [tool.uv]
 default-groups = ["dev", "torch"]
 
 [dependency-groups]
-torch = [
-    "torch>=2.5.1",
-]
 dev = [
-    "ipykernel>=6.29.5",
-    "mkdocs>=1.6.1",
-    "mypy>=1.14.1",
-    "pytest>=8.3.4",
-    "ruff>=0.9.1", 
+  "ipykernel>=6.29.5",
+  "mkdocs>=1.6.1",
+  "mypy>=1.14.1",
+  "pytest>=8.3.4",
+  "ruff>=0.9.1",
+]
+torch = [
+  "torch>=2.5.1",
 ]

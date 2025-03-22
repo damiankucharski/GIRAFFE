@@ -3,12 +3,14 @@ from typing import Callable, Iterable, Union
 
 import numpy as np
 
-import giraffe.callback as callback
+import giraffe.lib_types as lib_types
 from giraffe.backend.backend import Backend
+from giraffe.callback import Callback
 from giraffe.globals import BACKEND as B
 from giraffe.globals import DEVICE
+from giraffe.population import initialize_individuals
+from giraffe.fitness import average_precision_fitness
 from giraffe.tree import Tree
-import giraffe.lib_types as lib_types
 
 
 class Giraffe:
@@ -19,8 +21,8 @@ class Giraffe:
         population_size: int,
         population_multiplier: int,
         tournament_size: int,
-        fitness_function: Callable[[Tree, lib_types.Tensor], float],
-        callbacks: Iterable[callback.Callback] = tuple(),
+        fitness_function: Callable[[Tree, lib_types.Tensor], float] = average_precision_fitness,
+        callbacks: Iterable[Callback] = tuple(),
         backend: Union[Backend, None] = None,
         seed: int = 0,
     ):
@@ -38,11 +40,14 @@ class Giraffe:
         self.train_tensors, self.gt_tensor = self._build_train_tensors(preds_source, gt_path)
         self._validate_input()
 
+        self.population = self._initialize_population()
 
     def _call_hook(self, hook_name):
         for callback in self.callbacks:
             getattr(callback, hook_name)(self)
 
+    def _initialize_population(self):
+       return initialize_individuals(self.train_tensors, self.population_size)
 
     def run_iteration(self):
         pass

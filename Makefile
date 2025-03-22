@@ -31,6 +31,6 @@ ruff:
 	uv run ruff check giraffe
 
 
-all_test: test mypy
+test_all: test mypy
 
 
