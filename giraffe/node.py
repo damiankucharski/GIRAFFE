@@ -3,6 +3,7 @@ from typing import Generic, List, Optional, Sequence, TypeVar, Union, cast
 import numpy as np
 
 from giraffe.globals import BACKEND as B
+from giraffe.globals import postprocessing_function as PF
 from giraffe.lib_types import Tensor
 
 T = TypeVar("T", bound="Node")
@@ -183,7 +184,9 @@ class OperatorNode(Node):
 
     def calculate(self):
         concat = self._concat()
-        return self.op(concat)
+        post_op = self.op(concat)
+        postprocessed = PF(post_op) # by default passthrough, may change for different tasks
+        return postprocessed
 
     def _concat(self):
         assert self.parent is not None, "OperatorNode must have a parent to be calculated"
