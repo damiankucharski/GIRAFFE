@@ -5,7 +5,7 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff
-        args: ['--fix']
+        args: ["--fix"]
         stages: [pre-commit]
       # Run the formatter.
       - id: ruff-format
@@ -15,7 +15,7 @@ repos:
     hooks:
       - id: pytest-and-mypy
         name: Run tests and type checking
-        entry: make test_all 
+        entry: make test_all
         language: system
         pass_filenames: false
-        stages: [pre-push]
+        stages: [pre-commit]
