@@ -176,3 +176,4 @@ cython_debug/
 #dev_bin
 dev_bin/
 .test_dump/
+tests.ipynb

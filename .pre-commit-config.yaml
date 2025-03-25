@@ -6,10 +6,10 @@ repos:
       # Run the linter.
       - id: ruff
         args: ['--fix']
-        stages: [commit]
+        stages: [pre-commit]
       # Run the formatter.
       - id: ruff-format
-        stages: [commit]
+        stages: [pre-commit]
 
   - repo: local
     hooks:
@@ -18,4 +18,4 @@ repos:
         entry: make test_all 
         language: system
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]

@@ -4,6 +4,7 @@ dependencies = [
   "numpy>=2.2.1",
   "loguru>=0.7.3",
   "scikit-learn>=1.6.1",
+  "pre-commit>=4.2.0",
 ]
 description = "Add your description here"
 name = "giraffe"

@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, Sequence, TypeVar, Union, cast
+from typing import List, Optional, Sequence, TypeVar, Union, cast
 
 import numpy as np
 
@@ -185,7 +185,7 @@ class OperatorNode(Node):
     def calculate(self):
         concat = self._concat()
         post_op = self.op(concat)
-        postprocessed = PF(post_op) # by default passthrough, may change for different tasks
+        postprocessed = PF(post_op)  # by default passthrough, may change for different tasks
         return postprocessed
 
     def _concat(self):

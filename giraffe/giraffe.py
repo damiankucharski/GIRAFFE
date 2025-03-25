@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Iterable, List, Union, Sequence, Type
+from typing import Callable, Iterable, List, Sequence, Type, Union
 
 import numpy as np
 
@@ -10,11 +10,11 @@ from giraffe.crossover import crossover, tournament_selection_indexes
 from giraffe.fitness import average_precision_fitness
 from giraffe.globals import BACKEND as B
 from giraffe.globals import DEVICE
-from giraffe.population import initialize_individuals
 from giraffe.mutation import get_allowed_mutations
-from giraffe.tree import Tree
 from giraffe.node import OperatorNode
-from giraffe.operators import MIN, MAX, WEIGHTED_MEAN, MEAN
+from giraffe.operators import MAX, MEAN, MIN, WEIGHTED_MEAN
+from giraffe.population import initialize_individuals
+from giraffe.tree import Tree
 from giraffe.utils import first_uniques_mask
 
 
@@ -51,14 +51,14 @@ class Giraffe:
         self.should_stop = False
 
         self.population = self._initialize_population()
-        self.additional_population: List[Tree] = [] # for potential callbacks
+        self.additional_population: List[Tree] = []  # for potential callbacks
 
     def _call_hook(self, hook_name):
         for callback in self.callbacks:
             getattr(callback, hook_name)(self)
 
     def _initialize_population(self):
-       return initialize_individuals(self.train_tensors, self.population_size)
+        return initialize_individuals(self.train_tensors, self.population_size)
 
     def _calculate_fitnesses(self, trees: None | List[Tree] = None):
         if trees is None:
@@ -90,8 +90,6 @@ class Giraffe:
         mask = first_uniques_mask(codes)
         joined_population = joined_population[mask]
 
-
-
         # TODO: handle duplicates
         self.additional_population = []
 
@@ -99,7 +97,7 @@ class Giraffe:
         self._call_hook("on_evolution_start")
 
         for _ in range(iterations):
-            self._call_hook("on_generation_start") # possibly move to run_iteration instead
+            self._call_hook("on_generation_start")  # possibly move to run_iteration instead
             self.run_iteration()
             self._call_hook("on_generation_end")
 
