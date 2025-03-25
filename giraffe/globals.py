@@ -15,6 +15,7 @@ postprocessing_function = _passthrough
 def set_postprocessing_function(func):
     global postprocessing_function
     postprocessing_function = func
+
 # ----
 Backend.set_backend(os.environ.get("BACKEND", "numpy"))
 BACKEND: Type[BackendInterface] = Backend.get_backend()
