@@ -10,6 +10,24 @@ from giraffe.tree import Tree
 def append_new_node_mutation(
     tree: Tree, models: Sequence[Tensor], ids: None | Sequence[str | int] = None, allowed_ops: tuple[Type[OperatorNode], ...] = (MeanNode,), **kwargs
 ):
+    """
+    Mutation that adds a new node to the tree.
+
+    This mutation randomly selects an existing node in the tree and appends a new node as its
+    child. If the selected node is a ValueNode, a new OperatorNode is created as an intermediary,
+    and the new ValueNode is added as its child. If the selected node is an OperatorNode,
+    a new ValueNode is directly appended to it.
+
+    Args:
+        tree: The tree to mutate
+        models: Sequence of tensor models that can be used as values for the new ValueNode
+        ids: Optional sequence of identifiers for the models. If None, indices will be used
+        allowed_ops: Tuple of OperatorNode types that can be used when creating a new operator node
+        **kwargs: Additional keyword arguments (ignored)
+
+    Returns:
+        A new Tree with the mutation applied
+    """
     tree = tree.copy()
 
     if ids is None:
@@ -33,6 +51,22 @@ def append_new_node_mutation(
 
 
 def lose_branch_mutation(tree: Tree, **kwargs):
+    """
+    Mutation that removes a branch from the tree.
+
+    This mutation randomly selects a non-root, non-leaf node in the tree and removes it along
+    with all its descendants, effectively pruning that branch from the tree.
+
+    Args:
+        tree: The tree to mutate
+        **kwargs: Additional keyword arguments (ignored)
+
+    Returns:
+        A new Tree with the mutation applied
+
+    Raises:
+        AssertionError: If the tree has fewer than 3 nodes
+    """
     tree = tree.copy()
     assert tree.nodes_count >= 3, "Tree is too small"
     node = tree.get_random_node(allow_leaves=False, allow_root=False)
@@ -41,6 +75,22 @@ def lose_branch_mutation(tree: Tree, **kwargs):
 
 
 def new_tree_from_branch_mutation(tree: Tree, **kwargs):
+    """
+    Mutation that creates a new tree from a branch of the existing tree.
+
+    This mutation randomly selects a non-root ValueNode, removes it from the tree along with
+    its descendants, and creates a new tree with the removed node as its root.
+
+    Args:
+        tree: The tree to mutate
+        **kwargs: Additional keyword arguments (ignored)
+
+    Returns:
+        A new Tree created from the selected branch
+
+    Raises:
+        AssertionError: If the tree has only one ValueNode
+    """
     tree = tree.copy()
     assert len(tree.nodes["value_nodes"]) > 1
     node = tree.get_random_node(nodes_type="value_nodes", allow_leaves=True, allow_root=False)
@@ -51,6 +101,18 @@ def new_tree_from_branch_mutation(tree: Tree, **kwargs):
 
 
 def get_allowed_mutations(tree):
+    """
+    Determines which mutation operations are valid for a given tree.
+
+    This function checks the tree's structure and size to determine which mutations
+    can be safely applied without violating constraints.
+
+    Args:
+        tree: The tree to analyze
+
+    Returns:
+        A list of mutation functions that are valid for the given tree
+    """
     allowed_mutations: list[Callable] = [
         append_new_node_mutation,
     ]

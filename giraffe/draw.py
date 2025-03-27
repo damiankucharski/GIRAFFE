@@ -7,6 +7,21 @@ from giraffe.tree import Tree
 
 
 def draw_tree(to_draw: Node | OperatorNode | Tree | ValueNode, dot=None, add_val_eval=True):
+    """
+    Create a visual representation of a tree structure using Graphviz.
+
+    This function generates a directed graph visualization of a tree structure,
+    showing nodes and their hierarchical relationships. For ValueNodes, it can
+    optionally display the tensor values and evaluations if they're small enough.
+
+    Args:
+        to_draw: The object to visualize (can be a Tree, Node, OperatorNode, or ValueNode)
+        dot: Optional existing Digraph object to add to. If None, a new one is created.
+        add_val_eval: If True, include value and evaluation information for ValueNodes
+
+    Returns:
+        A Graphviz Digraph object representing the tree structure
+    """
     node: None | Node | OperatorNode | ValueNode
     if isinstance(to_draw, Tree):
         node = to_draw.root

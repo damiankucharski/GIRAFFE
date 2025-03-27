@@ -10,6 +10,26 @@ from giraffe.utils import Pickle
 
 
 class Tree:
+    """
+    Represents a computational tree structure for model ensemble composition.
+
+    The Tree class is a central component in GIRAFFE, representing a hierarchical structure
+    of nodes that define how different models are combined. Each tree has a ValueNode as its root,
+    and may contain multiple ValueNodes and OperatorNodes arranged in a tree structure.
+
+    ValueNodes contain tensor data (model predictions), while OperatorNodes define operations
+    to combine these predictions (such as mean, min, max, weighted mean). The tree's evaluation
+    produces a combined prediction by recursively applying these operations.
+
+    Trees can be manipulated through various operations like pruning, appending, and replacing
+    nodes, making them suitable for evolutionary algorithms where trees evolve over generations.
+
+    Attributes:
+        root: The root node of the tree (must be a ValueNode)
+        nodes: Dictionary containing lists of all value nodes and operator nodes in the tree
+        mutation_chance: Probability of mutation for this tree during evolution
+    """
+
     def __init__(self, root: ValueNode, mutation_chance=0.1):
         self.root = root
 
@@ -21,6 +41,12 @@ class Tree:
         self.update_nodes()
 
     def update_nodes(self):
+        """
+        Update the internal collections of nodes in the tree.
+
+        This method traverses the tree and categorizes all nodes into value nodes and operator nodes,
+        updating the internal `nodes` dictionary.
+        """
         self.nodes = {"value_nodes": [], "op_nodes": []}
         root_nodes = self.root.get_nodes()
         for node in root_nodes:
@@ -31,32 +57,92 @@ class Tree:
 
     @staticmethod
     def create_tree_from_root(root: ValueNode, mutation_chance=0.1):
+        """
+        Create a new tree with the given root node.
+
+        Args:
+            root: The ValueNode to use as the root of the new tree
+            mutation_chance: Probability of mutation for the new tree
+
+        Returns:
+            A new Tree instance
+        """
         tree = Tree(root, mutation_chance)
         return tree
 
     @property
     def evaluation(self):
+        """
+        Calculate and return the evaluation of the tree.
+
+        The evaluation is the result of recursively applying all operations
+        in the tree, starting from the root node.
+
+        Returns:
+            The tensor resulting from evaluating the tree
+        """
         # WARNING: This may not make sense for cases other than binary classification (Squeezing)
         # return B.squeeze(self.root.evaluation if self.root.evaluation is not None else self.root.calculate())
         return self.root.evaluation if self.root.evaluation is not None else self.root.calculate()
 
     @property
     def nodes_count(self):
+        """
+        Count the total number of nodes in the tree.
+
+        Returns:
+            The sum of value nodes and operator nodes
+        """
         return len(self.nodes["value_nodes"]) + len(self.nodes["op_nodes"])
 
     def _clean_evals(self):
+        """
+        Reset the cached evaluation results for all value nodes in the tree.
+
+        This forces recalculation of node evaluations when the tree structure changes.
+        """
         for node in self.nodes["value_nodes"]:
             node.evaluation = None
 
     def recalculate(self):
+        """
+        Force recalculation of the tree evaluation.
+
+        This method clears any cached evaluations and triggers a fresh calculation.
+
+        Returns:
+            The newly calculated evaluation of the tree
+        """
         self._clean_evals()
         return self.evaluation
 
     def copy(self):
+        """
+        Create a deep copy of the tree.
+
+        Returns:
+            A new Tree instance that is a deep copy of the current tree
+        """
         root_copy: ValueNode = cast(ValueNode, self.root.copy_subtree())
         return Tree.create_tree_from_root(root_copy)
 
-    def prune_at(self, node: Node) -> Node:  # remove node from the tree along with its children
+    def prune_at(self, node: Node) -> Node:
+        """
+        Remove a node and its subtree from the tree.
+
+        This method removes the specified node and all its descendants from the tree.
+        If the node is the only child of an operator node, that operator node will
+        also be pruned.
+
+        Args:
+            node: The node to prune from the tree
+
+        Returns:
+            The pruned node (which is no longer part of the tree)
+
+        Raises:
+            ValueError: If the node is not found in the tree or if attempting to prune the root node
+        """
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
             raise ValueError("Node not found in tree")
 
@@ -81,6 +167,20 @@ class Tree:
         return node
 
     def append_after(self, node: Node, new_node: Node):
+        """
+        Append a new node as a child of an existing node.
+
+        The new node must be of a different type than the existing node
+        (i.e., value nodes can only append operator nodes and vice versa).
+
+        Args:
+            node: The existing node to which the new node will be appended
+            new_node: The new node to append
+
+        Raises:
+            ValueError: If the node is not found in the tree or if attempting to append
+                       a node of the same type
+        """
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
             raise ValueError("Node not found in tree")
 
@@ -98,9 +198,23 @@ class Tree:
         node.add_child(new_node)
         self._clean_evals()
 
-    def replace_at(
-        self, at: Node, replacement: Node
-    ) -> Self:  # like prune at and then append after parent, but without parameters adjustment (may be worth it to reimplement)
+    def replace_at(self, at: Node, replacement: Node) -> Self:
+        """
+        Replace a node in the tree with another node.
+
+        The replacement node must be of the same type as the node being replaced.
+        This operation preserves the parent-child relationships.
+
+        Args:
+            at: The node to be replaced
+            replacement: The new node that will replace the existing node
+
+        Returns:
+            Self reference to allow method chaining
+
+        Raises:
+            AssertionError: If the replacement node is not of the same type as the node being replaced
+        """
         assert isinstance(replacement, type(at)), "Replacement must be of the same type as the node being replaced"
         at_parent = at.parent
 
@@ -123,6 +237,21 @@ class Tree:
         return self
 
     def get_random_node(self, nodes_type: str | None = None, allow_root=True, allow_leaves=True):
+        """
+        Get a random node from the tree based on specified constraints.
+
+        Args:
+            nodes_type: Optional type of nodes to consider ('value_nodes' or 'op_nodes')
+                       If None, a random type will be chosen
+            allow_root: Whether to allow selecting the root node
+            allow_leaves: Whether to allow selecting leaf nodes
+
+        Returns:
+            A randomly selected node that satisfies the constraints
+
+        Raises:
+            ValueError: If no node satisfying the constraints is found
+        """
         if self.root.children == []:
             if allow_root:
                 if nodes_type is None or nodes_type == "value_nodes":
@@ -150,9 +279,24 @@ class Tree:
         raise ValueError("No node found that complies to the constraints")
 
     def get_unique_value_node_ids(self):
+        """
+        Get the unique IDs of all value nodes in the tree.
+
+        Returns:
+            A list of unique IDs from all value nodes
+        """
         return list(set([node.id for node in self.nodes["value_nodes"]]))
 
     def save_tree_architecture(self, output_path):  # TODO: needs adjustment for weighted node
+        """
+        Save the tree's architecture to a file.
+
+        This method creates a copy of the tree with tensor values removed
+        and saves it to the specified path using pickle serialization.
+
+        Args:
+            output_path: Path where the tree architecture will be saved
+        """
         copy_tree = self.copy()
         for value_node in copy_tree.nodes["value_nodes"]:
             value_node.value = value_node.evaluation = None
@@ -160,11 +304,36 @@ class Tree:
         Pickle.save(output_path, copy_tree)
 
     @staticmethod
-    def load_tree_architecture(architecture_path) -> "Tree":  # TODO: needs adjustmed for weighted node
+    def load_tree_architecture(architecture_path) -> "Tree":  # TODO: needs adjusted for weighted node
+        """
+        Load a tree architecture from a file.
+
+        Args:
+            architecture_path: Path to the saved tree architecture file
+
+        Returns:
+            The loaded Tree object without tensor values
+        """
         return Pickle.load(architecture_path)
 
     @staticmethod
     def load_tree(architecture_path, preds_directory, tensors={}) -> Tuple["Tree", dict]:
+        """
+        Load a complete tree with tensor values from files.
+
+        This method loads a tree architecture and then loads the associated tensor
+        values for each value node from the specified directory.
+
+        Args:
+            architecture_path: Path to the saved tree architecture file
+            preds_directory: Directory containing the tensor files
+            tensors: Optional dictionary of pre-loaded tensors
+
+        Returns:
+            A tuple containing:
+            - The loaded Tree object with tensor values
+            - A dictionary of all tensors used in the tree
+        """
         current_tensors = {}
         current_tensors.update(tensors)  # tensors argument is mutable and we do not want to modify it
 
@@ -178,4 +347,10 @@ class Tree:
         return loaded, current_tensors
 
     def __repr__(self):
+        """
+        Get a string representation of the tree.
+
+        Returns:
+            A string representation formed by concatenating the code of all nodes
+        """
         return "_".join(node.code for node in self.root.get_nodes())

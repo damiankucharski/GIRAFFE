@@ -2,6 +2,15 @@ import numpy as np
 
 
 class BackendInterface:
+    """
+    Abstract interface for tensor backends used by GIRAFFE.
+
+    This interface defines the tensor operations required by GIRAFFE, allowing
+    for different backend implementations (e.g., NumPy, PyTorch) to be used
+    interchangeably. Each backend must implement all these methods to provide
+    a consistent interface for tensor operations.
+    """
+
     @staticmethod
     def tensor(x):
         raise NotImplementedError()

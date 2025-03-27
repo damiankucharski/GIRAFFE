@@ -5,10 +5,33 @@ from giraffe.backend.numpy_backend import NumpyBackend
 
 
 class Backend:
+    """
+    Factory class for managing tensor backends in GIRAFFE.
+
+    This class provides a centralized way to set and retrieve the tensor backend
+    implementation (NumPy or PyTorch) used throughout the GIRAFFE library.
+
+    Important: The backend should only be set at the beginning of the program,
+    before any GIRAFFE instances are initialized or predictions are loaded.
+    """
+
     _current_backend: Type[BackendInterface] = NumpyBackend
 
     @classmethod
     def set_backend(cls, backend_name):  # TODO: Add option to set backend by providing class instead
+        """
+        Set the active tensor backend by name.
+
+        Available backends:
+        - 'numpy': Uses NumPyBackend for tensor operations
+        - 'torch' or 'pytorch': Uses PyTorchBackend for tensor operations
+
+        Args:
+            backend_name: String identifier for the backend
+
+        Raises:
+            ValueError: If the backend name is not recognized
+        """
         if backend_name == "torch" or backend_name == "pytorch":
             from giraffe.backend.pytorch import PyTorchBackend
 
@@ -20,4 +43,10 @@ class Backend:
 
     @classmethod
     def get_backend(cls) -> Type[BackendInterface]:
+        """
+        Get the current tensor backend.
+
+        Returns:
+            The current backend implementation class (NumpyBackend or PyTorchBackend)
+        """
         return cls._current_backend

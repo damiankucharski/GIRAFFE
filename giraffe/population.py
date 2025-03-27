@@ -8,6 +8,23 @@ from giraffe.tree import Tree
 
 
 def initialize_individuals(tensors_dict: Dict[str, Tensor], n: int, exclude_ids=tuple()) -> List[Tree]:
+    """
+    Initialize a population of individuals (trees) from a dictionary of tensors.
+
+    This function creates simple trees, each with a root node containing a different tensor
+    from the provided dictionary. The tensors are selected randomly from the dictionary.
+
+    Args:
+        tensors_dict: Dictionary mapping model IDs to their tensor representations
+        n: Number of individuals (trees) to create
+        exclude_ids: Optional tuple of model IDs to exclude from selection
+
+    Returns:
+        List of initialized Tree objects
+
+    Raises:
+        Exception: If n is greater than the number of available tensors after exclusions
+    """
     order = np.arange(len(tensors_dict))
     np.random.shuffle(order)
 

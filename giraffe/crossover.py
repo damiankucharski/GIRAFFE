@@ -5,6 +5,23 @@ from giraffe.tree import Tree
 
 
 def tournament_selection_indexes(fitnesses: np.ndarray, tournament_size: int = 5) -> np.ndarray:
+    """
+    Selects parent indices for crossover using tournament selection.
+
+    In tournament selection, a subset of individuals (of size tournament_size) is randomly
+    selected from the population, and the one with the highest fitness is chosen as a parent.
+    This process is repeated to select the second parent.
+
+    Args:
+        fitnesses: Array of fitness values for the entire population
+        tournament_size: Number of individuals to include in each tournament
+
+    Returns:
+        Array with indices of the two selected parents
+
+    Raises:
+        ValueError: If tournament_size is too large relative to population size
+    """
     assert len(fitnesses.shape) == 1
     if tournament_size >= (len(fitnesses) - 1):
         raise ValueError(f"Size of the tournament should be at least 1 less than number of participans but{len(fitnesses)=} and {tournament_size=}")
@@ -23,6 +40,25 @@ def tournament_selection_indexes(fitnesses: np.ndarray, tournament_size: int = 5
 
 
 def crossover(tree1: Tree, tree2: Tree, node_type=None):
+    """
+    Performs crossover between two parent trees to produce two offspring trees.
+
+    Crossover works by selecting a random node from each parent tree and swapping
+    the subtrees rooted at those nodes. This creates two new offspring trees that
+    contain genetic material from both parents.
+
+    Args:
+        tree1: First parent tree
+        tree2: Second parent tree
+        node_type: Type of nodes to consider for crossover points ('value_nodes' or 'op_nodes').
+                   If None, a random suitable type will be chosen.
+
+    Returns:
+        Tuple of two new Tree objects created by crossover
+
+    Raises:
+        ValueError: If node_type is 'op_nodes' but one or both trees don't have operator nodes
+    """
     if node_type is None:
         allowable_node_types = ["value_nodes"]  # TODO: this may be worth refactoring along with "get_random_node" to not use string but types instead
 

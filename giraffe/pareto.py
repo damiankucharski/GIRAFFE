@@ -5,14 +5,57 @@ import numpy as np
 
 
 def maximize(a, b):
+    """
+    Compare two values for maximization in Pareto optimization.
+
+    This function determines if the first value (a) is at least as good as
+    the second value (b) in the context of maximization (higher is better).
+
+    Args:
+        a: First value to compare
+        b: Second value to compare
+
+    Returns:
+        True if a is greater than or equal to b, False otherwise
+    """
     return a >= b
 
 
 def minimize(a, b):
+    """
+    Compare two values for minimization in Pareto optimization.
+
+    This function determines if the first value (a) is at least as good as
+    the second value (b) in the context of minimization (lower is better).
+
+    Args:
+        a: First value to compare
+        b: Second value to compare
+
+    Returns:
+        True if a is less than or equal to b, False otherwise
+    """
     return a <= b
 
 
 def paretoset(array: np.ndarray, objectives: Sequence[Callable[[float, float], bool]]):
+    """
+    Identify the Pareto-optimal set from a collection of points with multiple objectives.
+
+    This function finds points that are not dominated by any other point, where dominance
+    is determined based on the specified objective functions. A point dominates another
+    if it is at least as good in all objectives and strictly better in at least one.
+
+    Args:
+        array: 2D array where each row is a point and each column represents a different objective
+        objectives: Sequence of objective functions (maximize or minimize) for each column
+
+    Returns:
+        Boolean mask where True indicates a point belongs to the Pareto-optimal set
+
+    Raises:
+        AssertionError: If dimensions don't match or the array is not 2D
+    """
     assert len(array.shape) == 2, "Array should be one dimensional, where first dimension is number of points, second dimension number of objectives"
 
     n_points, n_objectives = array.shape
