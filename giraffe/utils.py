@@ -1,5 +1,7 @@
 import pickle
 
+from loguru import logger
+
 
 class Pickle:
     """
@@ -20,8 +22,15 @@ class Pickle:
         Returns:
             The deserialized Python object
         """
-        with open(path, "rb") as file:
-            return pickle.load(file)
+        logger.debug(f"Loading pickle file from: {path}")
+        try:
+            with open(path, "rb") as file:
+                obj = pickle.load(file)
+            logger.debug(f"Successfully loaded object from {path}")
+            return obj
+        except Exception as e:
+            logger.error(f"Failed to load pickle file from {path}: {str(e)}")
+            raise
 
     @staticmethod
     def save(path, obj):
@@ -32,8 +41,14 @@ class Pickle:
             path: File path where the object will be saved
             obj: The Python object to serialize and save
         """
-        with open(path, "wb") as file:
-            pickle.dump(obj, file)
+        logger.debug(f"Saving object to pickle file: {path}")
+        try:
+            with open(path, "wb") as file:
+                pickle.dump(obj, file)
+            logger.debug(f"Successfully saved object to {path}")
+        except Exception as e:
+            logger.error(f"Failed to save object to {path}: {str(e)}")
+            raise
 
 
 def first_uniques_mask(arr):
@@ -50,11 +65,16 @@ def first_uniques_mask(arr):
         A list of booleans where True indicates the first occurrence of a value and
         False indicates a duplicate of a previously seen value
     """
+    logger.trace(f"Creating unique items mask for array of length {len(arr)}")
     mask = []
+    unique_count = 0
+
     for index, item in enumerate(arr):
         if item not in arr[:index]:
             mask.append(True)
+            unique_count += 1
         else:
             mask.append(False)
 
+    logger.trace(f"Found {unique_count} unique items out of {len(arr)} total items")
     return mask

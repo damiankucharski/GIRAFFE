@@ -331,6 +331,7 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "torch" },
 ]
 torch = [
     { name = "torch" },
@@ -355,6 +356,7 @@ dev = [
     { name = "mypy", specifier = ">=1.14.1" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "ruff", specifier = ">=0.9.1" },
+    { name = "torch", specifier = ">=2.5.1" },
 ]
 torch = [{ name = "torch", specifier = ">=2.5.1" }]
 

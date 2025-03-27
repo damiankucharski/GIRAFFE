@@ -32,13 +32,16 @@ class Tree:
 
     def __init__(self, root: ValueNode, mutation_chance=0.1):
         self.root = root
+        logger.debug(f"Creating new tree with root: {root}")
 
         if isinstance(self.root, OperatorNode):
+            logger.error("Cannot initialize tree with OperatorNode as root")
             raise Exception("Cannot get evaluation of tree with OpNode as root")
 
         self.nodes: dict[str, list] = {"value_nodes": [], "op_nodes": []}
         self.mutation_chance = mutation_chance
         self.update_nodes()
+        logger.trace(f"Tree initialized with {len(self.nodes['value_nodes'])} value nodes and {len(self.nodes['op_nodes'])} operator nodes")
 
     def update_nodes(self):
         """
@@ -47,6 +50,7 @@ class Tree:
         This method traverses the tree and categorizes all nodes into value nodes and operator nodes,
         updating the internal `nodes` dictionary.
         """
+        logger.debug("Updating tree node collections")
         self.nodes = {"value_nodes": [], "op_nodes": []}
         root_nodes = self.root.get_nodes()
         for node in root_nodes:
@@ -54,6 +58,7 @@ class Tree:
                 self.nodes["value_nodes"].append(node)
             else:
                 self.nodes["op_nodes"].append(node)
+        logger.trace(f"Updated nodes: {len(self.nodes['value_nodes'])} value nodes, {len(self.nodes['op_nodes'])} operator nodes")
 
     @staticmethod
     def create_tree_from_root(root: ValueNode, mutation_chance=0.1):
@@ -67,6 +72,7 @@ class Tree:
         Returns:
             A new Tree instance
         """
+        logger.debug(f"Creating tree from root node with mutation chance: {mutation_chance}")
         tree = Tree(root, mutation_chance)
         return tree
 
@@ -101,6 +107,7 @@ class Tree:
 
         This forces recalculation of node evaluations when the tree structure changes.
         """
+        logger.debug("Clearing cached evaluations for all value nodes")
         for node in self.nodes["value_nodes"]:
             node.evaluation = None
 
@@ -113,8 +120,11 @@ class Tree:
         Returns:
             The newly calculated evaluation of the tree
         """
+        logger.debug("Recalculating tree evaluation")
         self._clean_evals()
-        return self.evaluation
+        evaluation = self.evaluation
+        logger.trace("Tree recalculation complete")
+        return evaluation
 
     def copy(self):
         """
@@ -123,6 +133,7 @@ class Tree:
         Returns:
             A new Tree instance that is a deep copy of the current tree
         """
+        logger.debug("Creating deep copy of tree")
         root_copy: ValueNode = cast(ValueNode, self.root.copy_subtree())
         return Tree.create_tree_from_root(root_copy)
 
@@ -143,18 +154,26 @@ class Tree:
         Raises:
             ValueError: If the node is not found in the tree or if attempting to prune the root node
         """
+        logger.debug(f"Pruning node from tree: {node}")
+
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
+            logger.error(f"Attempted to prune node not in tree: {node}")
             raise ValueError("Node not found in tree")
 
         if node.parent is None:
+            logger.error("Cannot prune root node")
             raise ValueError("Cannot prune root node")
+
         if isinstance(node.parent, OperatorNode) and (
             len(node.parent.children) < 2
         ):  # if only child of op node is to be pruned, remove the parent too
+            logger.debug(f"Node is the only child of operator node, pruning parent: {node.parent}")
             return self.prune_at(node.parent)
 
         subtree_nodes = node.get_nodes()
+        node_count = len(subtree_nodes)
 
+        logger.debug(f"Removing {node_count} nodes in subtree")
         for subtree_node in subtree_nodes:
             if isinstance(subtree_node, ValueNode):
                 self.nodes["value_nodes"].remove(subtree_node)
@@ -162,7 +181,7 @@ class Tree:
                 self.nodes["op_nodes"].remove(subtree_node)
 
         node.parent.remove_child(node)
-
+        logger.debug("Pruning complete, clearing cached evaluations")
         self._clean_evals()
         return node
 
@@ -181,13 +200,18 @@ class Tree:
             ValueError: If the node is not found in the tree or if attempting to append
                        a node of the same type
         """
+        logger.debug(f"Appending node {new_node} after {node}")
+
         if node not in self.nodes["value_nodes"] and node not in self.nodes["op_nodes"]:
+            logger.error(f"Attempted to append to node not in tree: {node}")
             raise ValueError("Node not found in tree")
 
         if check_if_both_types_same_node_variant(type(node), type(new_node)):
+            logger.error(f"Cannot append node of same type: {type(node).__name__} and {type(new_node).__name__}")
             raise ValueError("Cannot append node of the same type")
 
         subtree_nodes = new_node.get_nodes()
+        logger.debug(f"Adding {len(subtree_nodes)} nodes from subtree")
 
         for subtree_node in subtree_nodes:
             if isinstance(subtree_node, ValueNode):
@@ -196,6 +220,7 @@ class Tree:
                 self.nodes["op_nodes"].append(subtree_node)
 
         node.add_child(new_node)
+        logger.debug("Append complete, clearing cached evaluations")
         self._clean_evals()
 
     def replace_at(self, at: Node, replacement: Node) -> Self:
@@ -297,11 +322,13 @@ class Tree:
         Args:
             output_path: Path where the tree architecture will be saved
         """
+        logger.info(f"Saving tree architecture to {output_path}")
         copy_tree = self.copy()
         for value_node in copy_tree.nodes["value_nodes"]:
             value_node.value = value_node.evaluation = None
 
         Pickle.save(output_path, copy_tree)
+        logger.debug("Tree architecture saved successfully")
 
     @staticmethod
     def load_tree_architecture(architecture_path) -> "Tree":  # TODO: needs adjusted for weighted node
@@ -314,7 +341,10 @@ class Tree:
         Returns:
             The loaded Tree object without tensor values
         """
-        return Pickle.load(architecture_path)
+        logger.info(f"Loading tree architecture from {architecture_path}")
+        tree = Pickle.load(architecture_path)
+        logger.debug("Tree architecture loaded successfully")
+        return tree
 
     @staticmethod
     def load_tree(architecture_path, preds_directory, tensors={}) -> Tuple["Tree", dict]:
@@ -334,6 +364,9 @@ class Tree:
             - The loaded Tree object with tensor values
             - A dictionary of all tensors used in the tree
         """
+        logger.info(f"Loading complete tree from {architecture_path} with tensors from {preds_directory}")
+        logger.debug(f"Starting with {len(tensors)} pre-loaded tensors")
+
         current_tensors = {}
         current_tensors.update(tensors)  # tensors argument is mutable and we do not want to modify it
 
@@ -341,9 +374,15 @@ class Tree:
         for value_node in loaded.nodes["value_nodes"]:
             node_id = value_node.id
             if node_id not in current_tensors:
+                logger.debug(f"Loading tensor for node ID: {node_id}")
                 current_tensors[node_id] = B.load(preds_directory / str(node_id), DEVICE)
+            else:
+                logger.trace(f"Using pre-loaded tensor for node ID: {node_id}")
             value_node.value = current_tensors[node_id]
 
+        logger.info(
+            f"Tree loaded successfully with {len(loaded.nodes['value_nodes'])} value nodes and {len(loaded.nodes['op_nodes'])} operator nodes"
+        )
         return loaded, current_tensors
 
     def __repr__(self):

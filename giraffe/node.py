@@ -1,6 +1,7 @@
 from typing import List, Optional, Sequence, TypeVar, Union, cast
 
 import numpy as np
+from loguru import logger
 
 from giraffe.globals import BACKEND as B
 from giraffe.globals import postprocessing_function as PF
@@ -43,19 +44,26 @@ class Node:
         Parameters:
         - child_node: Node to be added as child
         """
+        logger.debug(f"Adding child node to {self}")
         self.children.append(child_node)
         child_node.parent = self
+        logger.trace(f"Child added. Node now has {len(self.children)} children")
 
     def remove_child(self, child_node: "Node") -> "Node":
+        logger.debug(f"Removing child node {child_node} from {self}")
         self.children.remove(child_node)
         child_node.parent = None
+        logger.trace(f"Child removed. Node now has {len(self.children)} children")
         return child_node
 
     def replace_child(self, child, replacement_node):
         """
         Replaces child in place. No add child or remove child is called, so no add/remove adjustments are made.
         """
+        logger.debug(f"Replacing child node {child} with {replacement_node} in {self}")
+
         if replacement_node.parent is not None:
+            logger.error(f"Replacement node {replacement_node} already has a parent")
             raise ValueError("Replacement node already has a parent")
 
         ix = self.children.index(child)
@@ -63,6 +71,7 @@ class Node:
 
         child.parent = None
         replacement_node.parent = self
+        logger.trace(f"Child replaced at index {ix}")
 
     def get_nodes(self):
         """
@@ -100,13 +109,16 @@ class Node:
         Returns:
         - Copy of the subtree rooted at this node
         """
+        logger.debug(f"Creating copy of subtree rooted at {self}")
         self_copy = self.copy()
 
         for child in self.children:
+            logger.trace(f"Copying child subtree: {child}")
             child_copy = child.copy_subtree()
             self_copy.children.append(child_copy)  # not "append_child" to avoid any other operations
             child_copy.parent = self_copy
 
+        logger.trace(f"Subtree copy complete with {len(self_copy.children)} children")
         return self_copy
 
     def calculate(self):
@@ -146,19 +158,24 @@ class ValueNode(Node):
         self.id = id
 
     def calculate(self):
+        logger.trace(f"Calculating value for ValueNode {self.id}")
         if self.children:
             for child in self.children:
+                logger.trace(f"Calculating from child node: {child}")
                 self.evaluation = child.calculate()
         else:
             self.evaluation = self.value
+            logger.trace(f"Using direct value for node {self.id}")
         return self.evaluation
 
     def __str__(self):
         return f"ValueNode with value at: {hex(id(self.value))}"  # and evaluation: {self.evaluation}"
 
     def add_child(self, child_node):
+        logger.debug(f"Adding child to ValueNode {self.id}")
         super().add_child(child_node)
         self.evaluation = None
+        logger.debug("Child added and evaluation reset")
 
     def copy(self) -> "ValueNode":
         return ValueNode(None, self.value, self.id)
@@ -183,8 +200,11 @@ class OperatorNode(Node):
         super().__init__(children)
 
     def calculate(self):
+        logger.trace(f"Calculating value for {self.__class__.__name__}")
         concat = self._concat()
+        logger.trace(f"Concatenated tensor shape: {B.shape(concat)}")
         post_op = self.op(concat)
+        logger.trace(f"Post-operation tensor shape: {B.shape(post_op)}")
         postprocessed = PF(post_op)  # by default passthrough, may change for different tasks
         return postprocessed
 
@@ -192,6 +212,7 @@ class OperatorNode(Node):
         assert self.parent is not None, "OperatorNode must have a parent to be calculated"
         parent: ValueNode = cast(ValueNode, self.parent)
         parent_eval = parent.evaluation if parent.evaluation is not None else parent.value
+        logger.trace(f"Concatenating parent and {len(self.children)} children tensors")
         return B.concat(
             [B.unsqueeze(parent_eval, axis=0)] + [B.unsqueeze(child.calculate(), axis=0) for child in self.children],
             axis=0,
@@ -246,10 +267,12 @@ class WeightedMeanNode(OperatorNode):
         children: Optional[Sequence[ValueNode]],
         weights: List[float],
     ):
+        logger.debug(f"Creating WeightedMeanNode with {len(weights) if weights else 0} weights")
         self._weights = weights
         super().__init__(children)
 
         self._weight_sum_assertion()
+        logger.trace(f"WeightedMeanNode initialized with weights: {weights}")
 
     def op(self, x):
         weight_shape = (-1, *([1] * (len(x.shape) - 1)))
@@ -262,10 +285,12 @@ class WeightedMeanNode(OperatorNode):
         return WeightedMeanNode([], [x for x in self._weights])  # this needs to be rethought
 
     def add_child(self, child_node: Node):
+        logger.debug(f"Adding child to WeightedMeanNode with current weights: {self._weights}")
         assert isinstance(child_node, ValueNode)
         child_weight = np.random.uniform(0, 1)
         adj = 1.0 - child_weight
 
+        logger.trace(f"Generated child weight: {child_weight}, adjustment factor: {adj}")
         for i, val in enumerate(self._weights):
             self._weights[i] = val * adj
         self._weights.append(child_weight)
@@ -273,13 +298,18 @@ class WeightedMeanNode(OperatorNode):
 
         super().add_child(child_node)
         self._weight_length_assertion()
+        logger.debug(f"Child added, new weights: {self._weights}")
 
     def remove_child(self, child_node: Node):
+        logger.debug(f"Removing child from WeightedMeanNode with current weights: {self._weights}")
         assert isinstance(child_node, ValueNode), "Child node of WMN must be a ValueNode"
 
         child_ix = self.children.index(child_node)
         adj = 1.0 - self._weights[child_ix + 1]  # adjust for parent weight being first
+        weight_removed = self._weights[child_ix + 1]
         self._weights.pop(child_ix + 1)
+
+        logger.trace(f"Removed weight at index {child_ix+1} with value {weight_removed}, adjustment factor: {adj}")
 
         super().remove_child(child_node)
 
@@ -289,6 +319,7 @@ class WeightedMeanNode(OperatorNode):
         self._weight_sum_assertion()
         self._weight_length_assertion()
 
+        logger.debug(f"Child removed, new weights: {self._weights}")
         return child_node
 
     def replace_child(self, child, replacement_node):
@@ -314,26 +345,45 @@ class WeightedMeanNode(OperatorNode):
 
     @staticmethod
     def create_node(children: Sequence[ValueNode]):  # TODO: add tests for that function
+        logger.debug(f"Creating WeightedMeanNode with {len(children)} children")
         if len(children) == 0:
             weights = [1.0]
+            logger.trace("No children, setting weight to [1.0]")
         elif len(children) == 1:
             parent_weight = np.random.uniform(0, 1)
             weights = [parent_weight, 1 - parent_weight]
+            logger.trace(f"One child, weights: [{parent_weight}, {1-parent_weight}]")
         else:
             weights = [np.random.uniform(0, 1)]  # initial weight for parent
             weight_left = 1 - weights[0]
-            for _ in children[:-1]:
+            logger.trace(f"Multiple children, parent weight: {weights[0]}, remaining: {weight_left}")
+
+            for i in range(len(children) - 1):
                 weights.append(np.random.uniform(0, weight_left))
                 weight_left -= weights[-1]
-            weights.append(weight_left)
+                logger.trace(f"Child {i+1} weight: {weights[-1]}, remaining: {weight_left}")
 
-        return WeightedMeanNode(children, weights)
+            weights.append(weight_left)
+            logger.trace(f"Final child weight: {weight_left}")
+
+        node = WeightedMeanNode(children, weights)
+        logger.debug(f"Created WeightedMeanNode with weights: {weights}")
+        return node
 
     def _weight_sum_assertion(self):
-        assert np.isclose(np.sum(self._weights), 1), "Weights do not sum to 1"
+        weight_sum = np.sum(self._weights)
+        if not np.isclose(weight_sum, 1):
+            logger.error(f"Weights sum to {weight_sum}, not 1.0: {self._weights}")
+            assert np.isclose(weight_sum, 1), "Weights do not sum to 1"
+        logger.trace(f"Weight sum assertion passed: {weight_sum}")
 
     def _weight_length_assertion(self):
-        assert len(self._weights) == (len(self.children) + 1), "Length of weight array is different than number of adjacent nodes"
+        expected_length = len(self.children) + 1
+        actual_length = len(self._weights)
+        if actual_length != expected_length:
+            logger.error(f"Weight array length ({actual_length}) does not match expected {expected_length}")
+            assert actual_length == expected_length, "Length of weight array is different than number of adjacent nodes"
+        logger.trace(f"Weight length assertion passed: {actual_length}")
 
 
 class MaxNode(OperatorNode):

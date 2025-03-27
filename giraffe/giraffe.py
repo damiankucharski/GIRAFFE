@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Callable, Iterable, List, Sequence, Type, Union
 
 import numpy as np
+from loguru import logger
 
 import giraffe.lib_types as lib_types
 from giraffe.backend.backend import Backend
@@ -112,7 +113,10 @@ class Giraffe:
         Returns:
             List of initialized Tree objects
         """
-        return initialize_individuals(self.train_tensors, self.population_size)
+        logger.info(f"Initializing population with size {self.population_size}")
+        population = initialize_individuals(self.train_tensors, self.population_size)
+        logger.debug(f"Population initialized with {len(population)} individuals")
+        return population
 
     def _calculate_fitnesses(self, trees: None | List[Tree] = None):
         """
@@ -126,7 +130,10 @@ class Giraffe:
         """
         if trees is None:
             trees = self.population
-        return np.array([self.fitness_function(tree, self.gt_tensor) for tree in trees])
+        logger.debug(f"Calculating fitness for {len(trees)} trees")
+        fitnesses = np.array([self.fitness_function(tree, self.gt_tensor) for tree in trees])
+        logger.trace(f"Fitness stats - min: {fitnesses.min():.4f}, max: {fitnesses.max():.4f}, mean: {fitnesses.mean():.4f}")
+        return fitnesses
 
     def run_iteration(self):
         """
@@ -138,18 +145,28 @@ class Giraffe:
         3. Applies mutations to some of the new trees
         4. Removes duplicate trees from the population
         """
+        logger.info("Starting evolution iteration")
         fitnesses = self._calculate_fitnesses(self.population)
+
+        logger.debug("Performing tournament selection and crossover")
+        crossover_count = 0
         while len(self.additional_population) < (self.population_multiplier * self.population_size):
             idx1, idx2 = tournament_selection_indexes(fitnesses, self.tournament_size)
             parent_1, parent_2 = self.population[idx1], self.population[idx2]
             new_tree_1, new_tree_2 = crossover(parent_1, parent_2)
             self.additional_population += [new_tree_1, new_tree_2]
+            crossover_count += 1
+
+        logger.debug(f"Performed {crossover_count} crossover operations")
 
         models, ids = list(self.train_tensors.keys()), list(self.train_tensors.values())
+        mutation_count = 0
+        logger.debug("Applying mutations")
         for tree in self.additional_population:
             if np.random.rand() > tree.mutation_chance:
                 allowed_mutations = np.array(get_allowed_mutations(tree))
                 chosen_mutation = np.random.choice(allowed_mutations)
+                logger.trace(f"Applying mutation: {chosen_mutation.__name__}")
                 mutated_tree = chosen_mutation(
                     tree,
                     models=models,
@@ -157,10 +174,17 @@ class Giraffe:
                     allowed_ops=self.allowed_ops,
                 )
                 self.additional_population.append(mutated_tree)
+                mutation_count += 1
+
+        logger.debug(f"Applied {mutation_count} mutations")
+
         joined_population = np.array(self.population + self.additional_population)
         codes = np.array([tree.__repr__() for tree in joined_population])
         mask = first_uniques_mask(codes)
         joined_population = joined_population[mask]
+
+        logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
+        logger.debug(f"New population size: {len(joined_population)}")
 
         # TODO: handle duplicates
         self.additional_population = []
@@ -172,16 +196,20 @@ class Giraffe:
         Args:
             iterations: Number of evolution iterations to run
         """
+        logger.info(f"Starting evolution with {iterations} iterations")
         self._call_hook("on_evolution_start")
 
-        for _ in range(iterations):
+        for i in range(iterations):
+            logger.info(f"Generation {i+1}/{iterations}")
             self._call_hook("on_generation_start")  # possibly move to run_iteration instead
             self.run_iteration()
             self._call_hook("on_generation_end")
 
             if self.should_stop:
+                logger.info("Early stopping triggered")
                 break
 
+        logger.info("Evolution complete")
         self._call_hook("on_evolution_end")
 
     def _build_train_tensors(self, preds_source, gt_path):
@@ -195,18 +223,24 @@ class Giraffe:
         Returns:
             Tuple of (train_tensors dictionary, ground truth tensor)
         """
+        logger.info("Loading prediction tensors and ground truth")
         if isinstance(preds_source, str):
             preds_source = Path(preds_source)
         if isinstance(preds_source, Path):
+            logger.debug(f"Scanning directory for tensors: {preds_source}")
             tensor_paths = list(preds_source.glob("*"))
         else:
             tensor_paths = preds_source
 
         train_tensors = {}
         for tensor_path in tensor_paths:
+            logger.debug(f"Loading tensor: {tensor_path}")
             train_tensors[Path(tensor_path).name] = B.load(tensor_path, DEVICE)
 
+        logger.debug(f"Loaded {len(train_tensors)} prediction tensors")
+        logger.debug(f"Loading ground truth from: {gt_path}")
         gt_tensor = B.load(gt_path, DEVICE)
+        logger.info("Tensors loaded successfully")
         return train_tensors, gt_tensor
 
     def _validate_input(self, fix_swapped=True):  # no way to change this argument for now TODO
@@ -223,15 +257,28 @@ class Giraffe:
         Raises:
             ValueError: If tensor shapes are incompatible and cannot be fixed
         """
+        logger.info("Validating input tensors")
         # check if all tensors have the same shape
         shapes = [B.shape(tensor) for tensor in self.train_tensors.values()]
+
         if len(set(shapes)) > 1:
+            logger.error(f"Tensors have different shapes: {shapes}")
             raise ValueError(f"Tensors have different shapes: {shapes}")
+
+        logger.debug(f"All prediction tensors have shape: {shapes[0]}")
+        logger.debug(f"Ground truth tensor has shape: {B.shape(self.gt_tensor)}")
 
         if B.shape(self.gt_tensor) != shapes[0]:
             if fix_swapped:
                 if (shapes[0] == B.shape(self.gt_tensor)[::-1]) and (len(shapes[0]) == 2):
+                    logger.warning(f"Ground truth tensor dimensions appear to be swapped. Reshaping from {B.shape(self.gt_tensor)} to {shapes[0]}")
                     self.gt_tensor = B.reshape(self.gt_tensor, shapes[0])
-
+                    logger.info("Tensor shapes fixed successfully")
+                else:
+                    logger.error(f"Ground truth tensor shape {B.shape(self.gt_tensor)} incompatible with prediction tensor shape {shapes[0]}")
+                    raise ValueError(f"Ground truth tensor has incompatible shape: {B.shape(self.gt_tensor)} vs {shapes[0]}")
             else:
+                logger.error(f"Ground truth tensor shape {B.shape(self.gt_tensor)} does not match prediction tensor shape {shapes[0]}")
                 raise ValueError(f"Ground truth tensor has different shape than input tensors: {shapes[0]} != {B.shape(self.gt_tensor)}")
+
+        logger.info("Input validation successful")

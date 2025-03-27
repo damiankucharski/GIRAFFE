@@ -1,5 +1,7 @@
 from typing import Type
 
+from loguru import logger
+
 from giraffe.backend.backend_interface import BackendInterface
 from giraffe.backend.numpy_backend import NumpyBackend
 
@@ -32,13 +34,17 @@ class Backend:
         Raises:
             ValueError: If the backend name is not recognized
         """
+        logger.info(f"Setting tensor backend to '{backend_name}'")
         if backend_name == "torch" or backend_name == "pytorch":
             from giraffe.backend.pytorch import PyTorchBackend
 
             cls._current_backend = PyTorchBackend
+            logger.debug("PyTorch backend initialized successfully")
         elif backend_name == "numpy":
             cls._current_backend = NumpyBackend
+            logger.debug("NumPy backend initialized successfully")
         else:
+            logger.error(f"Invalid backend: {backend_name}")
             raise ValueError(f"Invalid backend: {backend_name}")
 
     @classmethod
@@ -49,4 +55,5 @@ class Backend:
         Returns:
             The current backend implementation class (NumpyBackend or PyTorchBackend)
         """
+        logger.trace(f"Getting current backend: {cls._current_backend.__name__}")
         return cls._current_backend
