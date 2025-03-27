@@ -698,7 +698,8 @@
 <p>Clone the repository:
    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/damiankucharski/GIRAFFE.git
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>GIRAFFE
-</code></pre></div></p>
+</code></pre></div>
+1.1 Or fork it to be able to send pull requests</p>
 </li>
 <li>
 <p>Install uv if you don't have it already:
@@ -717,16 +718,9 @@
    - Install the project in editable mode
    - Install all dependencies including development dependencies and optional extras</p>
 <ol>
-<li>
-<p>Activate the virtual environment:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>Install pre-commit hooks:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pre-commit<span class="w"> </span>install
-</code></pre></div></p>
-</li>
+<li>Install pre-commit hooks:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
+</code></pre></div></li>
 </ol>
 <h2 id="code-style">Code Style<a class="headerlink" href="#code-style" title="Permanent link">&para;</a></h2>
 <p>GIRAFFE uses:</p>
@@ -736,14 +730,20 @@
 </ul>
 <p>Docstrings should follow the Google-style format, which is used throughout the codebase.</p>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
-<p>Run the tests using pytest:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pytest
+<p>Run the tests pytest:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>make<span class="w"> </span><span class="nb">test</span>
 </code></pre></div>
-<p>When adding new features, please include tests.</p>
+<p>Check typing with mypy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>make<span class="w"> </span>mypy
+</code></pre></div>
+<p>Both of these can be run with the following make command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>test_all
+</code></pre></div>
+<p>When adding new features, please include tests. If you do not have GNU Make installed, you can just run the commands from the Makefile yourself.</p>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <p>Documentation is written in Markdown and built using MkDocs with the Material theme. API documentation is automatically generated from docstrings using mkdocstrings.</p>
 <p>To preview the documentation locally:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mkdocs<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span>serve_docs
 </code></pre></div>
 <p>Then visit <code>http://127.0.0.1:8000</code> in your browser.</p>
 <h2 id="pull-request-process">Pull Request Process<a class="headerlink" href="#pull-request-process" title="Permanent link">&para;</a></h2>
