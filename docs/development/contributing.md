@@ -9,6 +9,7 @@ GIRAFFE is an open-source project, and contributions are welcome. This document 
    git clone https://github.com/damiankucharski/GIRAFFE.git
    cd GIRAFFE
    ```
+1.1 Or fork it to be able to send pull requests
 
 2. Install uv if you don't have it already:
    ```bash
@@ -26,14 +27,9 @@ GIRAFFE is an open-source project, and contributions are welcome. This document 
    - Install the project in editable mode
    - Install all dependencies including development dependencies and optional extras
 
-4. Activate the virtual environment:
+4. Install pre-commit hooks:
    ```bash
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-5. Install pre-commit hooks:
-   ```bash
-   pre-commit install
+   uv run pre-commit install
    ```
 
 ## Code Style
@@ -47,13 +43,25 @@ Docstrings should follow the Google-style format, which is used throughout the c
 
 ## Testing
 
-Run the tests using pytest:
+Run the tests pytest:
 
 ```bash
-pytest
+make test
 ```
 
-When adding new features, please include tests.
+Check typing with mypy:
+
+```bash
+make mypy
+```
+
+Both of these can be run with the following make command:
+
+```bash
+make test_all
+```
+
+When adding new features, please include tests. If you do not have GNU Make installed, you can just run the commands from the Makefile yourself.
 
 ## Documentation
 
@@ -62,7 +70,7 @@ Documentation is written in Markdown and built using MkDocs with the Material th
 To preview the documentation locally:
 
 ```bash
-mkdocs serve
+make serve_docs
 ```
 
 Then visit `http://127.0.0.1:8000` in your browser.
