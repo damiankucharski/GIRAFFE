@@ -6,7 +6,7 @@ from giraffe.tree import Tree
 
 def tournament_selection_indexes(fitnesses: np.ndarray, tournament_size: int = 5) -> np.ndarray:
     assert len(fitnesses.shape) == 1
-    if len(fitnesses) >= (tournament_size - 1):
+    if tournament_size >= (len(fitnesses) - 1):
         raise ValueError(f"Size of the tournament should be at least 1 less than number of participans but{len(fitnesses)=} and {tournament_size=}")
 
     if len(fitnesses) < (2 * tournament_size):
@@ -22,12 +22,17 @@ def tournament_selection_indexes(fitnesses: np.ndarray, tournament_size: int = 5
     return selected
 
 
-def crossover(tree1: Tree, tree2: Tree):
-    allowable_node_types = ["value_nodes"]  # TODO: this may be worth refactoring along with "get_random_node" to not use string but types instead
+def crossover(tree1: Tree, tree2: Tree, node_type=None):
+    if node_type is None:
+        allowable_node_types = ["value_nodes"]  # TODO: this may be worth refactoring along with "get_random_node" to not use string but types instead
 
-    if (len(tree1.nodes["operator_nodes"]) > 0) & (len(tree2.nodes["operator_nodes"]) > 0):
-        allowable_node_types.append("operator_nodes")
-    nodes_type = np.random.choice(allowable_node_types)
+        if (len(tree1.nodes["op_nodes"]) > 0) & (len(tree2.nodes["op_nodes"]) > 0):
+            allowable_node_types.append("op_nodes")
+        nodes_type = np.random.choice(allowable_node_types)
+    else:
+        if node_type == "op_nodes" and not ((len(tree1.nodes["op_nodes"]) > 0) & (len(tree2.nodes["op_nodes"]) > 0)):
+            raise ValueError("Node type was chosen to be operator nodes but there are not operator nodes in at least one of the parents")
+        nodes_type = node_type
 
     tree1, tree2 = tree1.copy(), tree2.copy()
     node1, node2 = tree1.get_random_node(nodes_type), tree2.get_random_node(nodes_type)

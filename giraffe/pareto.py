@@ -1,5 +1,6 @@
 from typing import Callable, Sequence
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -32,3 +33,72 @@ def paretoset(array: np.ndarray, objectives: Sequence[Callable[[float, float], b
                 domination_mask[i] = False
                 break
     return domination_mask
+
+
+def plot_pareto_frontier(array: np.ndarray, objectives: Sequence[Callable[[float, float], bool]], figsize=(10, 6), title="Pareto Frontier"):
+    """
+    Visualize the Pareto frontier for a two-dimensional optimization problem.
+
+    Parameters:
+    -----------
+    array : np.ndarray
+        Array of points where the first dimension is the number of points and
+        the second dimension must be exactly 2 (two criteria to optimize).
+    objectives : Sequence[Callable]
+        Sequence of two objective functions, each should be either maximize or minimize.
+    figsize : tuple, optional
+        Size of the figure (width, height) in inches. Default is (10, 6).
+    title : str, optional
+        Title of the plot. Default is "Pareto Frontier".
+
+    Returns:
+    --------
+    fig, ax : tuple
+        Matplotlib figure and axes objects.
+    """
+    assert len(array.shape) == 2, "Array should be two-dimensional"
+    assert array.shape[1] == 2, "This function only works for two criteria (array.shape[1] must be 2)"
+    assert len(objectives) == 2, "This function only works for two objectives"
+
+    # Get the Pareto set (True for points on the Pareto frontier)
+    pareto_mask = paretoset(array, objectives)
+
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Extract Pareto and non-Pareto points
+    pareto_points = array[pareto_mask]
+    non_pareto_points = array[np.logical_not(pareto_mask)]
+
+    # Plot non-Pareto points in blue
+    if len(non_pareto_points) > 0:
+        ax.scatter(non_pareto_points[:, 0], non_pareto_points[:, 1], color="blue", label="Non-Pareto points")
+
+    # Plot Pareto points in red
+    if len(pareto_points) > 0:
+        ax.scatter(pareto_points[:, 0], pareto_points[:, 1], color="red", label="Pareto frontier points")
+
+        # Sort points for line drawing based on the objectives
+        # For two objectives, we typically want to sort by one coordinate
+        # The sort direction depends on whether we're maximizing or minimizing
+        sort_col = 0
+        sort_ascending = isinstance(objectives[0], type(minimize))
+
+        # Sort the Pareto points
+        sorted_indices = np.argsort(pareto_points[:, sort_col])
+        if not sort_ascending:
+            sorted_indices = sorted_indices[::-1]
+
+        sorted_pareto = pareto_points[sorted_indices]
+
+        # Draw the line connecting Pareto points
+        ax.plot(sorted_pareto[:, 0], sorted_pareto[:, 1], color="red", linestyle="-", linewidth=2)
+
+    # Add labels and title
+    ax.set_xlabel("Criterion 1")
+    ax.set_ylabel("Criterion 2")
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, linestyle="--", alpha=0.7)
+
+    return fig, ax
