@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Callable, Iterable, List, Sequence, Type, Union
 
 import numpy as np
+import numpy.typing as npt
 from loguru import logger
 
 import giraffe.lib_types as lib_types
@@ -14,7 +15,7 @@ from giraffe.globals import DEVICE
 from giraffe.mutation import get_allowed_mutations
 from giraffe.node import OperatorNode
 from giraffe.operators import MAX, MEAN, MIN, WEIGHTED_MEAN
-from giraffe.population import initialize_individuals
+from giraffe.population import choose_pareto_then_sorted, initialize_individuals
 from giraffe.tree import Tree
 from giraffe.utils import first_uniques_mask
 
@@ -86,6 +87,7 @@ class Giraffe:
         self.allowed_ops = allowed_ops
 
         self.train_tensors, self.gt_tensor = self._build_train_tensors(preds_source, gt_path)
+        self.models, self.ids = list(self.train_tensors.keys()), list(self.train_tensors.values())
         self._validate_input()
 
         # state
@@ -93,6 +95,7 @@ class Giraffe:
 
         self.population = self._initialize_population()
         self.additional_population: List[Tree] = []  # for potential callbacks
+        self.fitnesses: None | npt.NDArray[np.float64] = None
 
     def _call_hook(self, hook_name):
         """
@@ -118,7 +121,7 @@ class Giraffe:
         logger.debug(f"Population initialized with {len(population)} individuals")
         return population
 
-    def _calculate_fitnesses(self, trees: None | List[Tree] = None):
+    def _calculate_fitnesses(self, trees: None | List[Tree] = None) -> npt.NDArray[np.float64]:
         """
         Calculate fitness values for the given trees.
 
@@ -146,9 +149,30 @@ class Giraffe:
         4. Removes duplicate trees from the population
         """
         logger.info("Starting evolution iteration")
-        fitnesses = self._calculate_fitnesses(self.population)
+        self.fitnesses = self._calculate_fitnesses(self.population)
 
         logger.debug("Performing tournament selection and crossover")
+        crossover_count = self._perform_crossovers(self.fitnesses)
+        logger.debug(f"Performed {crossover_count} crossover operations")
+
+        logger.debug("Applying mutations")
+        mutation_count = self._mutate_additional_population()
+        logger.debug(f"Applied {mutation_count} mutations")
+
+        joined_population = np.array(self.population + self.additional_population)
+        codes = np.array([tree.__repr__() for tree in joined_population])
+        mask = first_uniques_mask(codes)
+        self.population = list(joined_population[mask])
+        self.fitnesses = self._calculate_fitnesses(self.population)
+
+        logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
+        logger.debug(f"New population size: {len(self.population)}")
+
+        self.population, self.fitnesses = choose_pareto_then_sorted(self.population, self.fitnesses, self.population_size)
+
+        self.additional_population = []
+
+    def _perform_crossovers(self, fitnesses: npt.NDArray[np.float64]):
         crossover_count = 0
         while len(self.additional_population) < (self.population_multiplier * self.population_size):
             idx1, idx2 = tournament_selection_indexes(fitnesses, self.tournament_size)
@@ -156,12 +180,10 @@ class Giraffe:
             new_tree_1, new_tree_2 = crossover(parent_1, parent_2)
             self.additional_population += [new_tree_1, new_tree_2]
             crossover_count += 1
+        return crossover_count
 
-        logger.debug(f"Performed {crossover_count} crossover operations")
-
-        models, ids = list(self.train_tensors.keys()), list(self.train_tensors.values())
+    def _mutate_additional_population(self) -> int:
         mutation_count = 0
-        logger.debug("Applying mutations")
         for tree in self.additional_population:
             if np.random.rand() > tree.mutation_chance:
                 allowed_mutations = np.array(get_allowed_mutations(tree))
@@ -169,25 +191,13 @@ class Giraffe:
                 logger.trace(f"Applying mutation: {chosen_mutation.__name__}")
                 mutated_tree = chosen_mutation(
                     tree,
-                    models=models,
-                    ids=ids,
+                    models=self.models,
+                    ids=self.ids,
                     allowed_ops=self.allowed_ops,
                 )
                 self.additional_population.append(mutated_tree)
                 mutation_count += 1
-
-        logger.debug(f"Applied {mutation_count} mutations")
-
-        joined_population = np.array(self.population + self.additional_population)
-        codes = np.array([tree.__repr__() for tree in joined_population])
-        mask = first_uniques_mask(codes)
-        joined_population = joined_population[mask]
-
-        logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
-        logger.debug(f"New population size: {len(joined_population)}")
-
-        # TODO: handle duplicates
-        self.additional_population = []
+        return mutation_count
 
     def train(self, iterations: int):
         """
