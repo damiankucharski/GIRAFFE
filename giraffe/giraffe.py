@@ -149,7 +149,7 @@ class Giraffe:
         4. Removes duplicate trees from the population
         """
         logger.info("Starting evolution iteration")
-        self.fitnesses = self._calculate_fitnesses(self.population)
+        self.fitnesses = self._calculate_fitnesses(self.population)  # this generally unnecessarily happens again
 
         logger.debug("Performing tournament selection and crossover")
         crossover_count = self._perform_crossovers(self.fitnesses)
@@ -159,11 +159,11 @@ class Giraffe:
         mutation_count = self._mutate_additional_population()
         logger.debug(f"Applied {mutation_count} mutations")
 
-        joined_population = np.array(self.population + self.additional_population)
+        joined_population = np.array(self.population + self.additional_population)  # maybe worth it to calculated fitnesses first?
         codes = np.array([tree.__repr__() for tree in joined_population])
         mask = first_uniques_mask(codes)
         self.population = list(joined_population[mask])
-        self.fitnesses = self._calculate_fitnesses(self.population)
+        self.fitnesses = self._calculate_fitnesses(self.population)  # comm above, recalculating some fitnesses this way
 
         logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
         logger.debug(f"New population size: {len(self.population)}")
