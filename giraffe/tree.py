@@ -116,12 +116,14 @@ class Tree:
         Force recalculation of the tree evaluation.
 
         This method clears any cached evaluations and triggers a fresh calculation.
+        It also updates the nodes dictionary
 
         Returns:
             The newly calculated evaluation of the tree
         """
         logger.debug("Recalculating tree evaluation")
         self._clean_evals()
+        self.update_nodes()
         evaluation = self.evaluation
         logger.trace("Tree recalculation complete")
         return evaluation
@@ -149,7 +151,7 @@ class Tree:
             node: The node to prune from the tree
 
         Returns:
-            The pruned node (which is no longer part of the tree)
+            The pruned node (which is no longer part of the tree). If parent was pruned, the parent will be returned.
 
         Raises:
             ValueError: If the node is not found in the tree or if attempting to prune the root node
@@ -240,7 +242,9 @@ class Tree:
         Raises:
             AssertionError: If the replacement node is not of the same type as the node being replaced
         """
-        assert isinstance(replacement, type(at)), "Replacement must be of the same type as the node being replaced"
+        assert (isinstance(replacement, ValueNode) and isinstance(at, ValueNode)) or (
+            isinstance(replacement, OperatorNode) and isinstance(at, OperatorNode)
+        ), "Replacement node must be of the same parent type (ValueNode or OperatorNode) as the node being replaced"
         at_parent = at.parent
 
         if at_parent is None:

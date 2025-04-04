@@ -80,40 +80,35 @@ def test_append_new_node_mutation_to_value_node(simple_tree, models, id_values):
     op_node = new_tree.root.children[0]
     assert len(op_node.children) == 1
     assert isinstance(op_node.children[0], ValueNode)
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())
 
 
-def test_append_new_node_mutation_to_operator_node(medium_tree, models, id_values):
+def test_append_new_node_mutation_to_operator_node(medium_tree, models, id_values, monkeypatch):
     """Test appending a new node after an operator node."""
     np.random.seed(42)  # For reproducibility
 
     # Mock random choice to select the operator node
-    original_choice = np.random.choice
 
-    def mock_choice(arr, *args, **kwargs):
-        if isinstance(arr[0], int):
-            return original_choice(arr, *args, **kwargs)
-        # For node selection, return the operator node
+    def mock_get_random_node():
         return medium_tree.nodes["op_nodes"][0]
 
-    np.random.choice = mock_choice
+    monkeypatch.setattr(medium_tree, "get_random_node", mock_get_random_node)
 
-    try:
-        # Apply mutation
-        new_tree = append_new_node_mutation(medium_tree, models, id_values)
+    # Apply mutation
+    new_tree = append_new_node_mutation(medium_tree, models, id_values)
 
-        # Verify structure
-        assert new_tree is not medium_tree  # Should be a different tree (copy)
-        assert new_tree.nodes_count > medium_tree.nodes_count
+    # Verify structure
+    assert new_tree is not medium_tree  # Should be a different tree (copy)
+    assert new_tree.nodes_count > medium_tree.nodes_count
 
-        # The operator node should have one more child
-        op_node = new_tree.nodes["op_nodes"][0]
-        assert len(op_node.children) == 4  # Original 3 + new one
+    # The operator node should have one more child
+    op_node = new_tree.nodes["op_nodes"][0]
+    assert len(op_node.children) == 4  # Original 3 + new one
 
-        # Verify the new child is a value node
-        new_child = op_node.children[-1]
-        assert isinstance(new_child, ValueNode)
-    finally:
-        np.random.choice = original_choice
+    # Verify the new child is a value node
+    new_child = op_node.children[-1]
+    assert isinstance(new_child, ValueNode)
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())
 
 
 def test_lose_branch_mutation(medium_tree):
@@ -129,6 +124,7 @@ def test_lose_branch_mutation(medium_tree):
 
     # The structure should be altered, but the roots should be equivalent (same id)
     assert new_tree.root.id == medium_tree.root.id
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())
 
 
 def test_lose_branch_mutation_too_small_tree(simple_tree):
@@ -153,6 +149,7 @@ def test_new_tree_from_branch_mutation(medium_tree):
     assert new_tree.nodes_count == 1
     assert len(new_tree.nodes["value_nodes"]) == 1
     assert len(new_tree.nodes["op_nodes"]) == 0
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())
 
 
 def test_new_tree_from_branch_mutation_insufficient_nodes(simple_tree):
@@ -203,6 +200,8 @@ def test_append_new_node_mutation_custom_ids(medium_tree, models):
 
     # The ID should be one of our indices
     assert new_node.id in [0, 1, 2]
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())
+    # assert 1 == 2, "Fail for now, add tests for actual structure, not only numbers of nodes"
 
 
 def test_append_new_node_mutation_with_custom_operator(simple_tree, models, id_values):
@@ -216,3 +215,4 @@ def test_append_new_node_mutation_with_custom_operator(simple_tree, models, id_v
     # Verify the new operator is of the correct type
     assert len(new_tree.nodes["op_nodes"]) == 1
     assert isinstance(new_tree.nodes["op_nodes"][0], MeanNode)
+    assert new_tree.nodes_count == len(new_tree.root.get_nodes())

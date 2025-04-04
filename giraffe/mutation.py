@@ -39,19 +39,18 @@ def append_new_node_mutation(
         assert len(models) == len(ids)
         logger.trace(f"Using provided IDs, confirmed length match: {len(ids)}")
 
-    idx_model = np.random.choice(ids)
-    logger.debug(f"Selected model ID: {idx_model}")
+    idx_model = np.random.randint(len(ids))
+    logger.debug(f"Selected model ID: {ids[idx_model]}")
     node = tree.get_random_node()
     logger.debug(f"Selected random node for mutation: {node}")
 
-    val_node: ValueNode = ValueNode([], models[idx_model], idx_model)
-    logger.trace(f"Created new value node with ID: {idx_model}")
+    val_node: ValueNode = ValueNode([], models[idx_model], ids[idx_model])
+    logger.trace(f"Created new value node with ID: {ids[idx_model]}")
 
     if isinstance(node, ValueNode):
         random_op: Type[OperatorNode] = np.random.choice(np.asarray(allowed_ops))
         logger.debug(f"Selected random operator type: {random_op.__name__}")
-        op_node: OperatorNode = random_op.create_node([])
-        op_node.add_child(val_node)
+        op_node: OperatorNode = random_op.create_node([val_node])
         logger.debug("Appending operator node with value node child after selected node")
         tree.append_after(node, op_node)
     else:
@@ -112,21 +111,19 @@ def new_tree_from_branch_mutation(tree: Tree, **kwargs):
     Raises:
         AssertionError: If the tree has only one ValueNode
     """
+    assert len(tree.nodes["value_nodes"]) > 1, "Tree must have more than one value node"
+
     logger.debug("Applying new_tree_from_branch_mutation")
     tree = tree.copy()
-
-    if len(tree.nodes["value_nodes"]) <= 1:
-        logger.error(f"Cannot apply new_tree_from_branch_mutation - tree has only {len(tree.nodes['value_nodes'])} value nodes")
-        assert len(tree.nodes["value_nodes"]) > 1, "Tree must have more than one value node"
 
     node = tree.get_random_node(nodes_type="value_nodes", allow_leaves=True, allow_root=False)
     logger.debug(f"Selected value node for creating new tree: {node}")
 
-    sapling_node = tree.prune_at(node)
+    _ = tree.prune_at(node)  # this may return parent op node, so we still want to use the original node.
     logger.debug("Pruned node and its subtree to create new tree")
 
-    assert isinstance(sapling_node, ValueNode)
-    new_tree = Tree.create_tree_from_root(sapling_node)
+    assert isinstance(node, ValueNode)
+    new_tree = Tree.create_tree_from_root(node)
 
     logger.info(f"Created new tree from branch with {new_tree.nodes_count} nodes")
     return new_tree

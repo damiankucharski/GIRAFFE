@@ -309,7 +309,7 @@ class WeightedMeanNode(OperatorNode):
         weight_removed = self._weights[child_ix + 1]
         self._weights.pop(child_ix + 1)
 
-        logger.trace(f"Removed weight at index {child_ix+1} with value {weight_removed}, adjustment factor: {adj}")
+        logger.trace(f"Removed weight at index {child_ix + 1} with value {weight_removed}, adjustment factor: {adj}")
 
         super().remove_child(child_node)
 
@@ -352,7 +352,7 @@ class WeightedMeanNode(OperatorNode):
         elif len(children) == 1:
             parent_weight = np.random.uniform(0, 1)
             weights = [parent_weight, 1 - parent_weight]
-            logger.trace(f"One child, weights: [{parent_weight}, {1-parent_weight}]")
+            logger.trace(f"One child, weights: [{parent_weight}, {1 - parent_weight}]")
         else:
             weights = [np.random.uniform(0, 1)]  # initial weight for parent
             weight_left = 1 - weights[0]
@@ -361,7 +361,7 @@ class WeightedMeanNode(OperatorNode):
             for i in range(len(children) - 1):
                 weights.append(np.random.uniform(0, weight_left))
                 weight_left -= weights[-1]
-                logger.trace(f"Child {i+1} weight: {weights[-1]}, remaining: {weight_left}")
+                logger.trace(f"Child {i + 1} weight: {weights[-1]}, remaining: {weight_left}")
 
             weights.append(weight_left)
             logger.trace(f"Final child weight: {weight_left}")

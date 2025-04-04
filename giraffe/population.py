@@ -33,12 +33,14 @@ def initialize_individuals(tensors_dict: Dict[str, Tensor], n: int, exclude_ids=
     np.random.shuffle(order)
     logger.trace("Shuffled tensor order")
 
-    ids = np.array(list(tensors_dict.keys()))[order]
-    tensors = np.array(list(tensors_dict.values()))[order]
+    ids_list = list(tensors_dict.keys())
+    tensors_list = list(tensors_dict.values())
 
     new_trees = []
     count = 0
-    for tensor, _id in zip(tensors, ids, strict=False):
+    for idx in order:
+        _id = ids_list[idx]
+        tensor = tensors_list[idx]
         if count >= n:
             break
         if _id in exclude_ids:
@@ -75,7 +77,7 @@ def choose_n_best(trees: List[Tree], fitnesses: np.ndarray, n: int):
 
     # Sort indices by fitness in descending order
     sorted_indices = np.argsort(-fitnesses)
-    logger.trace(f"Sorted fitness indices: {sorted_indices[:min(5, len(sorted_indices))]}")
+    logger.trace(f"Sorted fitness indices: {sorted_indices[: min(5, len(sorted_indices))]}")
 
     # Select the top n indices
     selected_indices = sorted_indices[:n]

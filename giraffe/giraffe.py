@@ -87,7 +87,7 @@ class Giraffe:
         self.allowed_ops = allowed_ops
 
         self.train_tensors, self.gt_tensor = self._build_train_tensors(preds_source, gt_path)
-        self.models, self.ids = list(self.train_tensors.keys()), list(self.train_tensors.values())
+        self.ids, self.models = list(self.train_tensors.keys()), list(self.train_tensors.values())
         self._validate_input()
 
         # state
@@ -157,7 +157,7 @@ class Giraffe:
 
         logger.debug("Applying mutations")
         mutation_count = self._mutate_additional_population()
-        logger.debug(f"Applied {mutation_count} mutations")
+        logger.info(f"Applied {mutation_count} mutations")
 
         joined_population = np.array(self.population + self.additional_population)  # maybe worth it to calculated fitnesses first?
         codes = np.array([tree.__repr__() for tree in joined_population])
@@ -185,7 +185,8 @@ class Giraffe:
     def _mutate_additional_population(self) -> int:
         mutation_count = 0
         for tree in self.additional_population:
-            if np.random.rand() > tree.mutation_chance:
+            mutation_chance = np.random.rand()
+            if mutation_chance < tree.mutation_chance:
                 allowed_mutations = np.array(get_allowed_mutations(tree))
                 chosen_mutation = np.random.choice(allowed_mutations)
                 logger.trace(f"Applying mutation: {chosen_mutation.__name__}")
@@ -210,7 +211,7 @@ class Giraffe:
         self._call_hook("on_evolution_start")
 
         for i in range(iterations):
-            logger.info(f"Generation {i+1}/{iterations}")
+            logger.info(f"Generation {i + 1}/{iterations}")
             self._call_hook("on_generation_start")  # possibly move to run_iteration instead
             self.run_iteration()
             self._call_hook("on_generation_end")
