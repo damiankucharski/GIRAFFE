@@ -1,46 +1,59 @@
 from typing import List, cast
 
 import numpy as np
+import pytest
 
 from giraffe.node import ValueNode
 from giraffe.population import choose_n_best, choose_pareto, choose_pareto_then_sorted
 from giraffe.tree import Tree
 
 
-class MockTree(Tree):
-    """A subclass of Tree that allows setting a mock nodes_count"""
-
-    def __init__(self, root, mock_nodes_count):
-        super().__init__(root)
-        self._mock_nodes_count = mock_nodes_count
-
-    @property
-    def nodes_count(self):
-        return self._mock_nodes_count
-
-
-# Helper function to create mock trees for testing
-def create_mock_tree(id_value, nodes_count):
-    """Create a mock tree with specified ID and node count for testing"""
+# Helper function to create trees for testing
+def create_mock_tree(id_value):
+    """Create a tree with specified ID for testing"""
     # Create a simple root node with a tensor value
     root = ValueNode(children=None, value=np.array([0.5]), id=id_value)
 
-    # Instead of using Tree directly, use our MockTree subclass
-    tree = MockTree(root, nodes_count)
+    # Create a regular Tree instance
+    tree = Tree(root)
 
     return tree
 
 
 class TestSelectionFunctions:
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_method(self, monkeypatch):
         """Set up test data before each test method execution"""
-        # Create sample trees with different IDs, and mock different node counts
+        # Define the mock node counts for each tree ID
+        self.mock_node_counts = {
+            "tree1": 10,  # Medium complexity
+            "tree2": 5,  # Low complexity
+            "tree3": 15,  # High complexity
+            "tree4": 8,  # Medium complexity
+            "tree5": 3,  # Low complexity
+        }
+
+        # Create a dictionary to store the original nodes_count method
+        original_nodes_count = Tree.nodes_count
+
+        # Create a mock nodes_count method that returns the mock value based on tree ID
+        def mock_nodes_count(tree_instance):
+            tree_id = str(tree_instance.root.id)
+            if tree_id in self.mock_node_counts:
+                return self.mock_node_counts[tree_id]
+            # Fall back to the original implementation if the tree ID is not mocked
+            return original_nodes_count.__get__(tree_instance)
+
+        # Patch the nodes_count property at the class level
+        monkeypatch.setattr(Tree, "nodes_count", property(mock_nodes_count))
+
+        # Create sample trees with different IDs
         self.trees = [
-            create_mock_tree("tree1", 10),  # Good fitness, medium complexity
-            create_mock_tree("tree2", 5),  # Good fitness, low complexity
-            create_mock_tree("tree3", 15),  # Medium fitness, high complexity
-            create_mock_tree("tree4", 8),  # Low fitness, medium complexity
-            create_mock_tree("tree5", 3),  # Medium fitness, low complexity
+            create_mock_tree("tree1"),  # Good fitness, medium complexity
+            create_mock_tree("tree2"),  # Good fitness, low complexity
+            create_mock_tree("tree3"),  # Medium fitness, high complexity
+            create_mock_tree("tree4"),  # Low fitness, medium complexity
+            create_mock_tree("tree5"),  # Medium fitness, low complexity
         ]
 
         # Define fitness values for each tree
