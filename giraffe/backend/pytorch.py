@@ -39,6 +39,14 @@ class PyTorchBackend(BackendInterface):
         return torch.sum(x, dim=axis)
 
     @staticmethod
+    def argmax(x, axis=None):
+        return torch.argmax(x, dim=axis)
+
+    @staticmethod
+    def argmin(x, axis=None):
+        return torch.argmin(x, dim=axis)
+
+    @staticmethod
     def to_numpy(x):
         return x.detach().numpy()
 

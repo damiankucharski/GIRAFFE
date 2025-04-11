@@ -32,6 +32,14 @@ class NumpyBackend(BackendInterface):
         return np.sum(x, axis)
 
     @staticmethod
+    def argmax(x, axis=None):
+        return np.argmax(x, axis=axis)
+
+    @staticmethod
+    def argmin(x, axis=None):
+        return np.argmin(x, axis=axis)
+
+    @staticmethod
     def to_numpy(x):
         return x
 

@@ -41,6 +41,14 @@ class BackendInterface:
         raise NotImplementedError()
 
     @staticmethod
+    def argmax(x, axis=None):
+        raise NotImplementedError()
+
+    @staticmethod
+    def argmin(x, axis=None):
+        raise NotImplementedError()
+
+    @staticmethod
     def to_numpy(x) -> np.ndarray:
         raise NotImplementedError()
 
