@@ -1,3 +1,4 @@
+import os
 import pickle
 
 from loguru import logger
@@ -78,3 +79,29 @@ def first_uniques_mask(arr):
 
     logger.trace(f"Found {unique_count} unique items out of {len(arr)} total items")
     return mask
+
+
+def mark_paths(list_of_paths) -> tuple[list[str | None], bool]:
+    """
+    Mark each path in the list with its type (directory or file) or None if it doesn't exist.
+
+    Args:
+        list_of_paths: A list of paths to be marked.
+
+    Returns:
+        A tuple containing:
+            - A list of strings or None values representing the type of each path.
+            - A boolean indicating whether all paths are of the same type.
+    """
+    marked_paths: list[str | None] = []
+
+    for path in list_of_paths:
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                marked_paths.append("dir")
+            else:
+                marked_paths.append("file")
+        else:
+            marked_paths.append(None)
+    all_same = all(item == marked_paths[0] for item in marked_paths)
+    return marked_paths, all_same
