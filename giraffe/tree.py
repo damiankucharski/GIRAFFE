@@ -168,7 +168,7 @@ class Tree:
 
         if isinstance(node.parent, OperatorNode) and (
             len(node.parent.children) < 2
-        ):  # if only child of op node is to be pruned, remove the parent too
+        ):  # if only child of op node is to be pruned, remove the parent instead
             logger.debug(f"Node is the only child of operator node, pruning parent: {node.parent}")
             return self.prune_at(node.parent)
 

@@ -87,6 +87,21 @@ def test_prune_at(two_base_trees):
     assert value_op_base_set["G"].parent == value_op_base_set["B"]
 
 
+def test_prune_at_only_child_of_op(two_base_trees):
+    _, tree2, value_op_base_set = two_base_trees
+
+    tree2.prune_at(value_op_base_set["H"])
+
+    assert len(tree2.nodes["value_nodes"]) == 1
+    assert len(tree2.nodes["op_nodes"]) == 0
+
+    assert tree2.root == value_op_base_set["F"]
+    assert tree2.root.children == []
+    assert value_op_base_set["F"].parent is None
+    assert value_op_base_set["C"].parent is None
+    assert value_op_base_set["H"].parent is value_op_base_set["C"]
+
+
 @pytest.mark.parametrize("node_should_fail", ["F", "C", "H"])
 def test_prune_at_fails(two_base_trees, node_should_fail):
     tree1, _, value_op_base_set = two_base_trees
