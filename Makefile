@@ -28,7 +28,7 @@ deploy_docs:
 
 ruff:
 	@echo "Running ruff..."
-	uv run ruff check giraffe
+	uv run ruff check giraffe --fix
 
 
 test_all: test mypy
