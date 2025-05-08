@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Self, Tuple, cast
 
 import numpy as np
@@ -110,6 +111,10 @@ class Tree:
         logger.debug("Clearing cached evaluations for all value nodes")
         for node in self.nodes["value_nodes"]:
             node.evaluation = None
+
+    def _clean_values_and_evals(self):
+        for value_node in self.nodes["value_nodes"]:
+            value_node.value = value_node.evaluation = None
 
     def recalculate(self):
         """
@@ -328,8 +333,7 @@ class Tree:
         """
         logger.info(f"Saving tree architecture to {output_path}")
         copy_tree = self.copy()
-        for value_node in copy_tree.nodes["value_nodes"]:
-            value_node.value = value_node.evaluation = None
+        copy_tree._clean_values_and_evals()
 
         Pickle.save(output_path, copy_tree)
         logger.debug("Tree architecture saved successfully")
@@ -349,6 +353,42 @@ class Tree:
         tree = Pickle.load(architecture_path)
         logger.debug("Tree architecture loaded successfully")
         return tree
+
+    def _load_tensors_from_path(self, preds_directory):
+        current_tensors = {}
+        preds_directory = Path(preds_directory)
+        for value_node in self.nodes["value_nodes"]:
+            node_id = value_node.id
+            if node_id not in current_tensors:
+                logger.debug(f"Loading tensor for node ID: {node_id}")
+                current_tensors[node_id] = B.load(preds_directory / str(node_id), DEVICE)
+            else:
+                logger.trace(f"Using pre-loaded tensor for node ID: {node_id}")
+        return current_tensors
+
+    def _load_tensors_to_tree(self, preds_directory, current_tensors):
+        if preds_directory is not None:
+            preds_directory = Path(preds_directory)
+            loaded_tensors = self._load_tensors_from_path(preds_directory)
+            current_tensors.update(loaded_tensors)
+        for value_node in self.nodes["value_nodes"]:
+            node_id = value_node.id
+            value_node.value = current_tensors[node_id]
+        return current_tensors
+
+    def do_pred_on_another_tensors(self, preds_directory=None, current_tensors=None):
+        assert not all(
+            [current_tensors is not None, preds_directory is not None]
+        ), "Either preds directory or current tensors needs to be set, not both"
+        assert any(
+            [current_tensors is not None, preds_directory is not None]
+        ), "Either preds directory or current tensors needs to be set, none was set"
+
+        current_tensors = {}
+        copy_tree = self.copy()
+        copy_tree._clean_values_and_evals()
+        current_tensors = copy_tree._load_tensors_to_tree(preds_directory, current_tensors)
+        return copy_tree.evaluation
 
     @staticmethod
     def load_tree(architecture_path, preds_directory, tensors={}) -> Tuple["Tree", dict]:
@@ -375,14 +415,7 @@ class Tree:
         current_tensors.update(tensors)  # tensors argument is mutable and we do not want to modify it
 
         loaded = Tree.load_tree_architecture(architecture_path)
-        for value_node in loaded.nodes["value_nodes"]:
-            node_id = value_node.id
-            if node_id not in current_tensors:
-                logger.debug(f"Loading tensor for node ID: {node_id}")
-                current_tensors[node_id] = B.load(preds_directory / str(node_id), DEVICE)
-            else:
-                logger.trace(f"Using pre-loaded tensor for node ID: {node_id}")
-            value_node.value = current_tensors[node_id]
+        current_tensors = loaded._load_tensors_to_tree(preds_directory, current_tensors)
 
         logger.info(
             f"Tree loaded successfully with {len(loaded.nodes['value_nodes'])} value nodes and {len(loaded.nodes['op_nodes'])} operator nodes"
