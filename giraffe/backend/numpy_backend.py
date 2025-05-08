@@ -11,8 +11,6 @@ class NumpyBackend(BackendInterface):
 
     @staticmethod
     def concat(tensors, axis=0):
-        if len(tensors[0].shape) == 1:
-            tensors = [t[np.newaxis, :] for t in tensors]
         return np.concatenate(tensors, axis)
 
     @staticmethod

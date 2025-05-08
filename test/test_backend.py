@@ -10,7 +10,7 @@ BACKENDS = [NumpyBackend, PyTorchBackend]
 @pytest.mark.parametrize(
     "arrays, axis, expected_shape",
     [
-        ([[1, 2], [3, 4]], 0, (2, 2)),
+        ([[1, 2], [3, 4]], 0, (4)),
         (
             [
                 [[1, 2], [3, 4]],

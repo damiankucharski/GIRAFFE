@@ -13,9 +13,6 @@ class PyTorchBackend(BackendInterface):
 
     @staticmethod
     def concat(tensors, axis=0):
-        # check if tensors are not unidimensional, if so we need to add singular dimension before concatenating
-        if len(tensors[0].shape) == 1:
-            tensors = [t.unsqueeze(0) for t in tensors]
         return torch.cat(tensors, dim=axis)
 
     @staticmethod
@@ -61,20 +58,6 @@ class PyTorchBackend(BackendInterface):
     @staticmethod
     def to_float(x):
         return x.float()
-
-    # @staticmethod
-    # def load_torch(path, device="cpu"):
-    #     tensor = torch.load(path, map_location=device)
-    #     if len(tensor.shape) == 1:
-    #         tensor = tensor.unsqueeze(0)
-
-    #     return tensor
-
-    # @staticmethod
-    # def load_numpy(path, device="cpu"):
-    #     import numpy as np
-
-    #     return torch.from_numpy(np.load(path), device=device)
 
     @staticmethod
     def shape(x):

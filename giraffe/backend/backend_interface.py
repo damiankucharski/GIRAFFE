@@ -17,11 +17,6 @@ class BackendInterface:
 
     @staticmethod
     def concat(tensors, axis=0):
-        """
-        Concatenation has to work a bit differently here, so that it works well with GIRAFFE.
-        If the tensors are unidimensional, we need to add a singular dimension before concatenating.
-        This will work well for binary classification out of the box.
-        """
         raise NotImplementedError()
 
     @staticmethod
