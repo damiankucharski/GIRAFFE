@@ -81,6 +81,5 @@ dev = [
   "ruff>=0.9.1",
   "torch>=2.5.1",
 ]
-torch = [
-  "torch>=2.5.1",
-]
+torch = ["torch>=2.5.1"]
+benchmark = ["medmnist>=3.0.2"]
