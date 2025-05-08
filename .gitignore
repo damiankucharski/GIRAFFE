@@ -178,3 +178,6 @@ dev_bin/
 .test_dump/
 tests.ipynb
 data_technical_paper/
+
+.idea
+/*.ipynb
