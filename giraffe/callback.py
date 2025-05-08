@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 if TYPE_CHECKING:
     from giraffe.giraffe import Giraffe
 
@@ -64,3 +66,23 @@ class Callback:
             giraffe: The Giraffe instance running the evolution
         """
         pass
+
+
+class FitnessNoChangeEarlyStoppingCallback(Callback):
+    def __init__(self, n_iterations=5):
+        super().__init__()
+        self._iterations_no_change = 0
+        self._last_fitnesses = None
+        self._n_iterations = n_iterations
+
+    def on_generation_end(self, giraffe: "Giraffe") -> None:
+        if self._last_fitnesses is None:
+            self._last_fitnesses = giraffe.fitnesses
+            return
+        assert isinstance(giraffe.fitnesses, np.ndarray), "Fitnesses need to be numpy array"
+        if np.allclose(self._last_fitnesses, giraffe.fitnesses):
+            self._iterations_no_change += 1
+            if self._iterations_no_change >= self._n_iterations:
+                giraffe.should_stop = True
+        else:
+            self._iterations_no_change = 0

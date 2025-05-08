@@ -57,3 +57,9 @@ class Backend:
         """
         logger.trace(f"Getting current backend: {cls._current_backend.__name__}")
         return cls._current_backend
+
+    def __init__(self):
+        pass
+
+    def __getattr__(self, name):
+        return getattr(Backend._current_backend, name)
