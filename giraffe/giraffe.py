@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Callable, Iterable, List, Sequence, Type, Union
 
@@ -12,12 +13,13 @@ from giraffe.crossover import crossover, tournament_selection_indexes
 from giraffe.fitness import average_precision_fitness
 from giraffe.globals import BACKEND as B
 from giraffe.globals import DEVICE
+from giraffe.lib_types import Tensor
 from giraffe.mutation import get_allowed_mutations
 from giraffe.node import OperatorNode
 from giraffe.operators import MAX, MEAN, MIN, WEIGHTED_MEAN
 from giraffe.population import choose_pareto_then_sorted, initialize_individuals
 from giraffe.tree import Tree
-from giraffe.utils import first_uniques_mask
+from giraffe.utils import first_uniques_mask, mark_paths
 
 
 class Giraffe:
@@ -235,22 +237,58 @@ class Giraffe:
             Tuple of (train_tensors dictionary, ground truth tensor)
         """
         logger.info("Loading prediction tensors and ground truth")
+        tensor_paths = []
         if isinstance(preds_source, str):
             preds_source = Path(preds_source)
         if isinstance(preds_source, Path):
             logger.debug(f"Scanning directory for tensors: {preds_source}")
             tensor_paths = list(preds_source.glob("*"))
-        else:
-            tensor_paths = preds_source
+        elif hasattr(preds_source, "__iter__"):
+            marked_paths, all_same = mark_paths(preds_source)
+            if all_same:
+                if marked_paths[0] == "dir":
+                    for pred_source in preds_source:
+                        pred_source = Path(pred_source)
+                        tensor_paths += list(pred_source.glob("*"))
+                elif marked_paths[0] == "file":
+                    tensor_paths = list(preds_source)
+            else:
+                raise ValueError(
+                    "preds source must be either path to directory with predictions,"
+                    " list of paths to directories with predictions, or list of paths to predictions"
+                )
 
         train_tensors = {}
         for tensor_path in tensor_paths:
             logger.debug(f"Loading tensor: {tensor_path}")
-            train_tensors[Path(tensor_path).name] = B.load(tensor_path, DEVICE)
+            tensor_id = Path(tensor_path).name
+            if tensor_id not in train_tensors:
+                train_tensors[tensor_id] = B.load(tensor_path, DEVICE)
+            else:
+                train_tensors[tensor_id] = B.concat([train_tensors[tensor_id], B.load(tensor_path, DEVICE)])
 
         logger.debug(f"Loaded {len(train_tensors)} prediction tensors")
         logger.debug(f"Loading ground truth from: {gt_path}")
-        gt_tensor = B.load(gt_path, DEVICE)
+
+        gt_tensor: None | Tensor = None
+        if isinstance(gt_path, str):
+            gt_path = Path(gt_path)
+        if isinstance(gt_path, Path):
+            if os.path.isdir(gt_path):
+                for path in gt_path.glob("*"):
+                    if gt_tensor is None:
+                        gt_tensor = B.load(path)
+                    else:
+                        gt_tensor = B.concat([gt_tensor, B.load(path, device=DEVICE)])  # type: ignore
+        elif hasattr(gt_path, "__iter__"):
+            for path in gt_path:
+                if gt_tensor is None:
+                    gt_tensor = B.load(path)
+                else:
+                    gt_tensor = B.concat([gt_tensor, B.load(path, device=DEVICE)])  # type: ignore
+        else:
+            raise ValueError(f"{gt_path} is not valid for loading gt")
+
         logger.info("Tensors loaded successfully")
         return train_tensors, gt_tensor
 

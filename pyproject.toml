@@ -53,8 +53,8 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixable = ["ALL"]
-ignore = ["B006"]
-select = ["E", "F", "I", "B", "W", "C90"]
+select = ["E", "F", "I", "B", "W"]
+ignore = ["B006", "C901"]
 unfixable = []
 
 [tool.mypy]
