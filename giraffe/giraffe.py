@@ -12,7 +12,7 @@ from giraffe.callback import Callback
 from giraffe.crossover import crossover, tournament_selection_indexes
 from giraffe.fitness import average_precision_fitness
 from giraffe.globals import BACKEND as B
-from giraffe.globals import DEVICE
+from giraffe.globals import DEVICE, set_postprocessing_function
 from giraffe.lib_types import Tensor
 from giraffe.mutation import get_allowed_mutations
 from giraffe.node import OperatorNode
@@ -60,6 +60,7 @@ class Giraffe:
         callbacks: Iterable[Callback] = tuple(),
         backend: Union[Backend, None] = None,
         seed: int = 0,
+        postprocessing_function=None,
     ):
         """
         Initialize the Giraffe evolutionary algorithm.
@@ -75,11 +76,15 @@ class Giraffe:
             callbacks: Iterable of callback objects for monitoring/modifying evolution
             backend: Optional backend implementation for tensor operations
             seed: Random seed for reproducibility
+            postprocessing_function: Function applied after each Op Node.
+            Most of the operations may break some data characteristics, for example vector summing to one. This can be used to fix that.
         """
         if backend is not None:
             Backend.set_backend(backend)
         if seed is not None:
             np.random.seed(seed)
+        if postprocessing_function:
+            set_postprocessing_function(postprocessing_function)
 
         self.population_size = population_size
         self.population_multiplier = population_multiplier
@@ -318,7 +323,10 @@ class Giraffe:
         logger.debug(f"Ground truth tensor has shape: {B.shape(self.gt_tensor)}")
 
         if B.shape(self.gt_tensor) != shapes[0]:
-            if fix_swapped:
+            gt_shape = B.shape(self.gt_tensor)
+            if len(shapes[0]) > 1 and (len(gt_shape) == 1 or gt_shape[-1] == 1):
+                pass
+            elif fix_swapped:
                 if (shapes[0] == B.shape(self.gt_tensor)[::-1]) and (len(shapes[0]) == 2):
                     logger.warning(f"Ground truth tensor dimensions appear to be swapped. Reshaping from {B.shape(self.gt_tensor)} to {shapes[0]}")
                     self.gt_tensor = B.reshape(self.gt_tensor, shapes[0])

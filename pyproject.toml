@@ -80,6 +80,7 @@ dev = [
   "pytest>=8.3.4",
   "ruff>=0.9.1",
   "torch>=2.5.1",
+  "torchmetrics>=1.7.1",
 ]
 torch = ["torch>=2.5.1"]
 benchmark = ["medmnist>=3.0.2"]

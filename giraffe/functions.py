@@ -26,6 +26,6 @@ def set_multiclass_postprocessing():
 
     This function sets the global postprocessing to normalize tensor outputs so that
     they can be interpreted as probability distributions, which is required for
-    multiclass classification tasks.
+    multiclass classification tasks. This is important if probas and not logits are an output.
     """
     set_postprocessing_function(scale_vector_to_sum_1)

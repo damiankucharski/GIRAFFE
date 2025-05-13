@@ -376,7 +376,7 @@ class Tree:
             value_node.value = current_tensors[node_id]
         return current_tensors
 
-    def do_pred_on_another_tensors(self, preds_directory=None, current_tensors=None):
+    def do_pred_on_another_tensors(self, preds_directory=None, current_tensors=None, return_tree=False):
         assert not all(
             [current_tensors is not None, preds_directory is not None]
         ), "Either preds directory or current tensors needs to be set, not both"
@@ -388,6 +388,9 @@ class Tree:
         copy_tree = self.copy()
         copy_tree._clean_values_and_evals()
         current_tensors = copy_tree._load_tensors_to_tree(preds_directory, current_tensors)
+        if return_tree:
+            return copy_tree.evaluation, copy_tree
+
         return copy_tree.evaluation
 
     @staticmethod

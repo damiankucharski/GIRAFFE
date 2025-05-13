@@ -24,7 +24,18 @@ def _passthrough(x):
 
 
 # Global postprocessing function that will be applied to tree evaluations
-postprocessing_function = _passthrough
+class Postprocessor:
+    def __init__(self):
+        self._postprocessing_function = _passthrough
+
+    def __call__(self, x):
+        return self._postprocessing_function(x)
+
+    def set_postprocessing_function(self, func):
+        self._postprocessing_function = func
+
+
+postprocessing_function = Postprocessor()
 
 
 def set_postprocessing_function(func):
@@ -36,7 +47,7 @@ def set_postprocessing_function(func):
     """
     logger.info(f"Setting global postprocessing function to: {func.__name__}")
     global postprocessing_function
-    postprocessing_function = func
+    postprocessing_function.set_postprocessing_function(func)
 
 
 # ---- Backend configuration ----
