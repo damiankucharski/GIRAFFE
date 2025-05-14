@@ -1,0 +1,86 @@
+[project]
+dependencies = [
+  "graphviz>=0.20.3",
+  "numpy>=2.2.1",
+  "loguru>=0.7.3",
+  "scikit-learn>=1.6.1",
+  "pre-commit>=4.2.0",
+  "matplotlib>=3.10.1",
+]
+description = "Add your description here"
+name = "giraffe"
+readme = "README.md"
+requires-python = ">=3.12"
+version = "0.1.0"
+
+[tool.setuptools.packages.find]
+include = ["giraffe*"] # Only include the giraffe package
+
+[tool.ruff]
+
+line-length = 150
+target-version = "py312"
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+]
+
+[tool.ruff.lint]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+fixable = ["ALL"]
+select = ["E", "F", "I", "B", "W"]
+ignore = ["B006", "C901"]
+unfixable = []
+
+[tool.mypy]
+check_untyped_defs = true
+explicit_package_bases = true
+files = "giraffe"
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = false
+
+[tool.uv]
+default-groups = ["dev", "torch"]
+
+[dependency-groups]
+dev = [
+  "ipykernel>=6.29.5",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.6.9",
+  "mkdocstrings-python>=1.16.8",
+  "mypy>=1.14.1",
+  "pytest>=8.3.4",
+  "ruff>=0.9.1",
+  "torch>=2.5.1",
+  "torchmetrics>=1.7.1",
+]
+torch = ["torch>=2.5.1"]
+benchmark = ["medmnist>=3.0.2"]
