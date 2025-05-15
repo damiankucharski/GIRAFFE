@@ -18,7 +18,7 @@ from giraffe.mutation import get_allowed_mutations
 from giraffe.node import OperatorNode
 from giraffe.operators import MAX, MEAN, MIN, WEIGHTED_MEAN
 from giraffe.pareto import _get_optimal_point_based_on_list_of_objective_functions, maximize
-from giraffe.population import choose_pareto_then_proximity, initialize_individuals
+from giraffe.population import choose_pareto, choose_pareto_then_proximity, initialize_individuals
 from giraffe.tree import Tree
 from giraffe.utils import first_uniques_mask, mark_paths
 
@@ -56,6 +56,7 @@ class Giraffe:
         population_size: int,
         population_multiplier: int,
         tournament_size: int,
+        minimize_node_count: bool = True,
         objective_functions: Sequence[Callable[[Tree, lib_types.Tensor], float]] = (average_precision_fitness,),
         objectives: Sequence[Callable[[float, float], bool]] = (maximize,),
         allowed_ops: Sequence[Type[OperatorNode]] = (MEAN, MIN, MAX, WEIGHTED_MEAN),
@@ -73,6 +74,7 @@ class Giraffe:
             population_size: Size of the population to evolve
             population_multiplier: Factor determining how many additional trees to generate
             tournament_size: Number of trees to consider in tournament selection
+            minimize_node_count: Whether the pareto frontier models should also consider node count.
             objective_functions: Functions that calculate the fitnesses that are to be optimized
             objectives: Functions that copare two fitnesses and return True if first is better than second. Usually maximize or minimize
             allowed_ops: Sequence of operator node types that can be used in trees
@@ -92,6 +94,7 @@ class Giraffe:
         self.population_size = population_size
         self.population_multiplier = population_multiplier
         self.tournament_size = tournament_size
+        self.minimize_node_count = minimize_node_count
 
         self.objective_functions = objective_functions
         self.objectives = objectives
@@ -185,7 +188,9 @@ class Giraffe:
         logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
         logger.debug(f"New population size: {len(self.population)}")
 
-        self.population, self.fitnesses = choose_pareto_then_proximity(self.population, self.fitnesses, self.objectives, self.population_size)
+        self.population, self.fitnesses = choose_pareto_then_proximity(
+            self.population, self.fitnesses, self.objectives, self.population_size, self.minimize_node_count
+        )
 
         self.additional_population = []
 
@@ -349,3 +354,9 @@ class Giraffe:
                 raise ValueError(f"Ground truth tensor has different shape than input tensors: {shapes[0]} != {B.shape(self.gt_tensor)}")
 
         logger.info("Input validation successful")
+
+    @property
+    def pareto_trees(self):
+        assert isinstance(self.fitnesses, np.ndarray), "Fitnesses not yet initialized. Did you run any iteration?"
+        all_pareto_trees, _ = choose_pareto(self.population, self.fitnesses, len(self.population), self.objectives, self.minimize_node_count)
+        return all_pareto_trees
