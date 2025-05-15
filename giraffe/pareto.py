@@ -3,6 +3,8 @@ from typing import Callable, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from giraffe.utils import _euclidean_distances
+
 
 def maximize(a, b):
     """
@@ -147,14 +149,6 @@ def plot_pareto_frontier(array: np.ndarray, objectives: Sequence[Callable[[float
     return fig, ax
 
 
-def _euclidean_distances(points, point):
-    point = point.reshape(1, -1)
-    squared_diff = (points - point) ** 2
-    distances = np.sqrt(np.sum(squared_diff, axis=1))
-
-    return distances
-
-
 def _get_optimal_point_based_on_list_of_objective_functions(objectives: Sequence[Callable[[float, float], bool]]):
     opt_point = []
     for obj in objectives:
@@ -173,6 +167,5 @@ def sort_by_optimal_point_proximity(array: np.ndarray, objectives: Sequence[Call
     assert len(opt_point) == array.shape[-1], "Number of objectives doesn't match the shape of the array"
 
     distances = _euclidean_distances(array, opt_point)
-    print(distances)
     indices = np.argsort(distances)
     return array[indices], indices
