@@ -1,10 +1,11 @@
-from typing import Dict, List
+from typing import Callable, Dict, List, Sequence
 
 import numpy as np
 from loguru import logger
 
 from giraffe.lib_types import Tensor
 from giraffe.node import ValueNode
+from giraffe.pareto import maximize, minimize, paretoset, sort_by_optimal_point_proximity
 from giraffe.tree import Tree
 
 
@@ -106,7 +107,6 @@ def choose_pareto(trees: List[Tree], fitnesses: np.ndarray, n: int):
         List of selected trees and their corresponding fitness values
     """
     logger.debug(f"Selecting up to {n} Pareto-optimal trees from population of {len(trees)}")
-    from giraffe.pareto import maximize, minimize, paretoset
 
     # Create a 2D array with [fitness, nodes_count] for each tree
     objectives_array = np.zeros((len(trees), 2), dtype=float)
@@ -203,4 +203,54 @@ def choose_pareto_then_sorted(trees: List[Tree], fitnesses: np.ndarray, n: int):
     selected_fitnesses = np.concatenate([all_pareto_fitnesses, best_remaining_fitnesses])
 
     logger.info(f"Total selection: {len(selected_trees)} trees ({len(all_pareto_trees)} Pareto + {len(best_remaining_trees)} by fitness)")
+    return selected_trees, selected_fitnesses
+
+
+def choose_pareto_then_proximity(trees: List[Tree], fitnesses: np.ndarray, objectives: Sequence[Callable[[float, float], bool]], n: int):
+    logger.info(f"Selecting {n} trees using Pareto-then-sorted strategy")
+
+    # Get all Pareto-optimal trees without limiting the number
+    # Internal implementation of choose_pareto uses a limit, so we use a large number
+    # to effectively get all Pareto trees
+    all_pareto_trees, all_pareto_fitnesses = choose_pareto(trees, fitnesses, len(trees))
+    logger.debug(f"Found {len(all_pareto_trees)} Pareto-optimal trees")
+
+    # If we have more Pareto-optimal trees than n, select the n with highest fitness
+    if len(all_pareto_trees) > n:
+        logger.debug(f"Too many Pareto trees ({len(all_pareto_trees)}), selecting top {n}")
+        return choose_n_best(all_pareto_trees, all_pareto_fitnesses, n)
+
+    # If we have exactly n Pareto trees, return them
+    if len(all_pareto_trees) == n:
+        logger.debug(f"Exactly {n} Pareto trees, returning all of them")
+        return all_pareto_trees, all_pareto_fitnesses
+
+    # We need to fill the remainder with sorted trees
+    remaining_slots = n - len(all_pareto_trees)
+    logger.debug(f"Need {remaining_slots} more trees to reach target of {n}")
+
+    # Create a list of non-Pareto trees by excluding Pareto trees
+    pareto_trees_set = set(all_pareto_trees)
+    non_pareto_trees = []
+    non_pareto_fitnesses = []
+
+    for i, tree in enumerate(trees):
+        if tree not in pareto_trees_set:
+            non_pareto_trees.append(tree)
+            non_pareto_fitnesses.append(fitnesses[i])
+
+    logger.debug(f"Found {len(non_pareto_trees)} non-Pareto trees")
+    non_pareto_fitnesses_np = np.array(non_pareto_fitnesses)
+    _, sorted_indices = sort_by_optimal_point_proximity(non_pareto_fitnesses_np, objectives)
+    proximity_remaining_trees = non_pareto_trees[sorted_indices[:remaining_slots]]
+    proximity_remaining_fitnesses = non_pareto_fitnesses[sorted_indices[:remaining_slots]]
+
+    selected_trees = all_pareto_trees + proximity_remaining_trees
+    selected_fitnesses = np.concatenate([all_pareto_fitnesses, proximity_remaining_fitnesses])
+
+    logger.info(
+        f"Total selection: {len(selected_trees)} trees ({len(all_pareto_trees)} Pareto\
+        + {len(proximity_remaining_trees)} by proximity to optimal optimization point)"
+    )
+
     return selected_trees, selected_fitnesses
