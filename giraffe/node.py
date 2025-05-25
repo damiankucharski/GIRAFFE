@@ -479,7 +479,7 @@ class ThresholdNode(OperatorNode):
         self.threshold = threshold
 
     def __str__(self) -> str:
-        return f"ThresholdNode{self.strclose}"
+        return f"ThresholdNode{self.strclose} with Threshold = {self.threshold:.2f}"
 
     def copy(self):
         return ThresholdNode(None, self.threshold, self.close)

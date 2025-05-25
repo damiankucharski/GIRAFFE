@@ -16,7 +16,7 @@ from giraffe.globals import DEVICE, set_postprocessing_function
 from giraffe.lib_types import Tensor
 from giraffe.mutation import get_allowed_mutations
 from giraffe.node import OperatorNode
-from giraffe.operators import MAX, MEAN, MIN, WEIGHTED_MEAN
+from giraffe.operators import CLOSE_THRESHOLD, FAR_THRESHOLD, MAX, MEAN, MIN, WEIGHTED_MEAN
 from giraffe.pareto import _get_optimal_point_based_on_list_of_objective_functions, maximize
 from giraffe.population import choose_pareto, choose_pareto_then_proximity, initialize_individuals
 from giraffe.tree import Tree
@@ -59,7 +59,7 @@ class Giraffe:
         minimize_node_count: bool = True,
         objective_functions: Sequence[Callable[[Tree, lib_types.Tensor], float]] = (average_precision_fitness,),
         objectives: Sequence[Callable[[float, float], bool]] = (maximize,),
-        allowed_ops: Sequence[Type[OperatorNode]] = (MEAN, MIN, MAX, WEIGHTED_MEAN),
+        allowed_ops: Sequence[Type[OperatorNode]] = (MEAN, MIN, MAX, WEIGHTED_MEAN, FAR_THRESHOLD, CLOSE_THRESHOLD),
         callbacks: Iterable[Callback] = tuple(),
         backend: Union[str, None] = None,
         seed: int = 0,
@@ -300,6 +300,8 @@ class Giraffe:
                         gt_tensor = B.load(path)
                     else:
                         gt_tensor = B.concat([gt_tensor, B.load(path, device=DEVICE)])  # type: ignore
+            else:
+                gt_tensor = B.load(gt_path)
         elif hasattr(gt_path, "__iter__"):
             for path in gt_path:
                 if gt_tensor is None:

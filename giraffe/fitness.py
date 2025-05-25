@@ -67,7 +67,7 @@ def average_precision_fitness(tree: Tree, gt: Tensor, task: Literal["binary", "m
 
     # Infer number of classes from ground truth
     num_classes = _infer_num_classes(gt, task)
-    gt = gt.squeeze()
+    gt = gt.squeeze().int()
 
     # Create metric with appropriate parameters based on task
     if task == "multiclass":
@@ -113,7 +113,7 @@ def roc_auc_score_fitness(tree: Tree, gt: Tensor, task: Literal["binary", "multi
 
     # Infer number of classes from ground truth
     num_classes = _infer_num_classes(gt, task)
-    gt = gt.squeeze()
+    gt = gt.squeeze().int()
 
     # Create metric with appropriate parameters based on task
     if task == "multiclass":
@@ -158,7 +158,7 @@ def accuracy_fitness(tree: Tree, gt: Tensor, task: Literal["binary", "multiclass
 
     # Infer number of classes from ground truth
     num_classes = _infer_num_classes(gt, task)
-    gt = gt.squeeze()
+    gt = gt.squeeze().int()
 
     # Create metric with appropriate parameters based on task
     if task == "multiclass":
