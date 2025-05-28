@@ -40,18 +40,32 @@ def test_mixed_objectives():
     assert result == [False, False, False, True]
 
 
-def test_mixed_objectives_multiple_optimal():
+@pytest.mark.parametrize(
+    "points, objectives, expected_mask",
+    [
+        (
+            np.array([[0.59, 0.937, 5.0], [0.597, 0.935, 5.0], [0.585, 0.94, 5.0], [0.586, 0.939, 5.0]]),
+            [maximize, maximize, minimize],
+            [True, True, True, True],
+        ),
+        (
+            np.array(
+                [
+                    [4, 1],  # optimal, highest maximize
+                    [3, 0],  # best minimize
+                    [3, 3],  # dominated
+                    [4, 1],  # the same as first
+                ]
+            ),
+            [maximize, minimize],
+            [True, True, False, True],
+        ),
+    ],
+)
+def test_mixed_objectives_multiple_optimal(points, objectives, expected_mask):
     """Test with mix of maximize and minimize objectives where multiple points are optimal"""
-    points = np.array(
-        [
-            [4, 1],  # optimal, highest maximize
-            [3, 0],  # best minimize
-            [3, 3],  # dominated
-            [4, 1],  # the same as first
-        ]
-    )
-    result = paretoset(points, [maximize, minimize])
-    assert result == [True, True, False, True]
+    result = paretoset(points, objectives)
+    assert result == expected_mask
 
 
 def test_identical_points():
