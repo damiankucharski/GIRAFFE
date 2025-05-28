@@ -75,6 +75,12 @@ def average_precision_fitness(tree: Tree, gt: Tensor, task: Literal["binary", "m
     elif task == "multilabel":
         metric = AveragePrecision(task=task, num_labels=num_classes)
     else:  # binary
+        if pred.shape[1] == 2:
+            pred = pred[:, 1]
+        elif pred.shape[1] == 1:
+            pred = pred.squeeze()
+        else:
+            pass
         metric = AveragePrecision(task=task)
 
     # Calculate and return the score

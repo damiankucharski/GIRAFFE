@@ -19,12 +19,12 @@ import sys
 
 from loguru import logger
 
-from giraffe.giraffe import Giraffe
-
 # Configure loguru logger
 log_level = os.environ.get("GIRAFFE_LOG_LEVEL", "INFO")
 logger.remove()  # Remove default handler
 logger.add(sys.stderr, level=log_level)
 
+
+from giraffe.giraffe import Giraffe  # noqa E402
 
 logger.trace(f"{Giraffe}")

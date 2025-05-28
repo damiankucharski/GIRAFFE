@@ -4,6 +4,7 @@ from typing import Callable, Iterable, List, Sequence, Type, Union
 
 import numpy as np
 import numpy.typing as npt
+import tqdm
 from loguru import logger
 
 import giraffe.lib_types as lib_types
@@ -169,21 +170,27 @@ class Giraffe:
         """
         logger.info("Starting evolution iteration")
         if self.fitnesses is None:
-            self.fitnesses = self._calculate_fitnesses(self.population)  # this generally unnecessarily happens again > probably not with the if
+            self.fitnesses = self._calculate_fitnesses(self.population).round(
+                3
+            )  # this generally unnecessarily happens again > probably not with the if
 
         logger.debug("Performing tournament selection and crossover")
+        assert self.fitnesses.shape[0] == len(self.population)
         crossover_count = self._perform_crossovers(self.fitnesses)
+        assert self.fitnesses.shape[0] == len(self.population)
         logger.debug(f"Performed {crossover_count} crossover operations")
 
         logger.debug("Applying mutations")
         mutation_count = self._mutate_additional_population()
+        assert self.fitnesses.shape[0] == len(self.population)
         logger.info(f"Applied {mutation_count} mutations")
 
         joined_population = np.array(self.population + self.additional_population)  # maybe worth it to calculated fitnesses first?
         codes = np.array([tree.__repr__() for tree in joined_population])
         mask = first_uniques_mask(codes)
         self.population = list(joined_population[mask])
-        self.fitnesses = self._calculate_fitnesses(self.population)
+        self.fitnesses = self._calculate_fitnesses(self.population).round(3)
+        assert self.fitnesses.shape[0] == len(self.population)
 
         logger.debug(f"Removed {len(joined_population) - sum(mask)} duplicate trees")
         logger.debug(f"New population size: {len(self.population)}")
@@ -191,6 +198,8 @@ class Giraffe:
         self.population, self.fitnesses = choose_pareto_then_proximity(
             self.population, self.fitnesses, self.objectives, self.population_size, self.minimize_node_count
         )
+
+        assert self.fitnesses.shape[0] == len(self.population)
 
         self.additional_population = []
 
@@ -232,7 +241,7 @@ class Giraffe:
         logger.info(f"Starting evolution with {iterations} iterations")
         self._call_hook("on_evolution_start")
 
-        for i in range(iterations):
+        for i in tqdm.tqdm(range(iterations)):
             logger.info(f"Generation {i + 1}/{iterations}")
             self._call_hook("on_generation_start")  # possibly move to run_iteration instead
             self.run_iteration()
@@ -358,7 +367,13 @@ class Giraffe:
         logger.info("Input validation successful")
 
     @property
-    def pareto_trees(self):
+    def pareto_trees(self) -> List[Tree]:
         assert isinstance(self.fitnesses, np.ndarray), "Fitnesses not yet initialized. Did you run any iteration?"
         all_pareto_trees, _ = choose_pareto(self.population, self.fitnesses, len(self.population), self.objectives, self.minimize_node_count)
         return all_pareto_trees
+
+    @property
+    def pareto_fitnesses(self) -> np.ndarray:
+        assert isinstance(self.fitnesses, np.ndarray), "Fitnesses not yet initialized. Did you run any iteration?"
+        _, pareto_fitnesses = choose_pareto(self.population, self.fitnesses, len(self.population), self.objectives, self.minimize_node_count)
+        return pareto_fitnesses
