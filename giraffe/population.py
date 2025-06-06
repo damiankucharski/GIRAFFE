@@ -7,7 +7,6 @@ from giraffe.lib_types import Tensor
 from giraffe.node import ValueNode
 from giraffe.pareto import minimize, paretoset, sort_by_optimal_point_proximity
 from giraffe.tree import Tree
-from giraffe.utils import first_uniques_mask
 
 
 def initialize_individuals(tensors_dict: Dict[str, Tensor], n: int, exclude_ids=tuple()) -> List[Tree]:
@@ -107,15 +106,15 @@ def choose_pareto(trees: List[Tree], fitnesses: np.ndarray, n: int, objectives: 
         selected_indices = pareto_indices
         logger.debug(f"Using all {len(selected_indices)} Pareto-optimal trees")
 
-    # Return selected trees and their fitnesses
+    # Return selected trees and their fitnesses, for now allow for duplicates with regards to fitrnesses
 
     selected_fitnesses = fitnesses[selected_indices]
-    uniques_mask = first_uniques_mask(selected_fitnesses)
+    # uniques_mask = first_uniques_mask(selected_fitnesses)
 
-    selected_fitnesses = selected_indices[uniques_mask]
+    # selected_indices = selected_indices[uniques_mask]
 
     selected_trees = [trees[i] for i in selected_indices]
-    selected_fitnesses = fitnesses[selected_indices]
+    # selected_fitnesses = fitnesses[selected_indices]
 
     if len(selected_trees) > 0:
         logger.debug(f"Selected {len(selected_trees)} trees with fitness range: {selected_fitnesses.min():.4f} - {selected_fitnesses.max():.4f}")

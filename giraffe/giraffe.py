@@ -96,6 +96,7 @@ class Giraffe:
         self.population_multiplier = population_multiplier
         self.tournament_size = tournament_size
         self.minimize_node_count = minimize_node_count
+        self.seed = seed
 
         self.objective_functions = objective_functions
         self.objectives = objectives
